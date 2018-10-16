@@ -137,7 +137,7 @@ to exclude the API function. */
 #define configUSE_TIMERS				  1
 #define configTIMER_TASK_PRIORITY		( 5 )
 #define configTIMER_QUEUE_LENGTH		  20
-#define configTIMER_TASK_STACK_DEPTH	( configMINIMAL_STACK_SIZE * 2 )
+#define configTIMER_TASK_STACK_DEPTH	( configMINIMAL_STACK_SIZE * 4 )//WT.EDIT( configMINIMAL_STACK_SIZE * 2 )
 
 
 /* Cortex-M specific definitions. */

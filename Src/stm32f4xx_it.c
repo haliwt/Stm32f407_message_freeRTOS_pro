@@ -186,7 +186,7 @@ void RCC_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-/* USER CODE BEGIN 1 */
+#if 0
 void TIM6_DAC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM6_IRQn 0 */
@@ -201,8 +201,9 @@ void TIM6_DAC_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
   
-  HAL_TIM_IRQHandler(&htim2);
+  //HAL_TIM_IRQHandler(&htim2);
   
 }
+#endif
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

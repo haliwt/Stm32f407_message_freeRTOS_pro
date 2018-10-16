@@ -18,7 +18,7 @@
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 #include "led/bsp_led.h"
-//#include "BasicTIM/bsp_BasicTIM.h" 
+#include "R_axis/r_axis.h" 
 #include "usart/bsp_debug_usart.h"
 #include "key/bsp_key.h"
 //#include "GeneralTIM/bsp_GeneralTIM.h"
@@ -36,6 +36,12 @@ static QueueHandle_t xQueue2 = NULL;
 KEY key1,key2,key3,key4,key5;
 
 uint8_t aRxBuffer[8];
+// 速度最大值由驱动器和电机决定，有些最大是1800，有些可以达到4000
+__IO uint32_t set_speed  = 3000;         // 速度 单位为0.05rad/sec
+// 加速度和减速度选取一般根据实际需要，值越大速度变化越快，加减速阶段比较抖动
+// 所以加速度和减速度值一般是在实际应用中多尝试出来的结果
+__IO uint32_t step_accel = 100;         // 加速度 单位为0.0.5rad/sec^2
+__IO uint32_t step_decel = 100;         // 减速度 单位为0.05rad/sec^2
 
 typedef struct Msg
 {
@@ -126,7 +132,7 @@ int main(void)
   /* 板子按键初始化 */
   KEY_GPIO_Init();
   /* 基本定时器初始化：100us中断一次 */
-//  BASIC_TIMx_Init();
+  STEPMOTOR_TIMx_Init();
 //  GENERAL_TIMx_Init();
 	/* 创建任务 */
 	AppTaskCreate();
@@ -164,12 +170,13 @@ static void vTaskTaskUserIF(void *pvParameters)
       Key_RefreshState(&key2);//刷新按键状态
       Key_RefreshState(&key3);//刷新按键状态
    
-      
+      #if 0
 	  HAL_UART_Receive(&husart_debug,aRxBuffer,8,0xffff);
 	   printf("aRxBuffer[0]=%#x \n",aRxBuffer[0]);
 	   printf("aRxBuffer[1]=%#x \n",aRxBuffer[1]);
 	   printf("aRxBuffer[2]=%#x \n",aRxBuffer[2]);
 	   printf("aRxBuffer[7]=%#x \n",aRxBuffer[7]);
+	   #endif 
       if(Key_AccessTimes(&key1,KEY_ACCESS_READ)!=0)//按键被按下过
       {
         printf("=================================================\r\n");
@@ -285,6 +292,7 @@ static void vTaskLED2(void *pvParameters)
     {
       /* 成功接收，并通过串口将数据打印出来 */
       printf("接收到消息队列数据ucQueueMsgValue = %d\r\n", ucQueueMsgValue);
+	  STEPMOTOR_AxisMoveRel(6400*5, step_accel, step_decel, set_speed);
     }
     else
     {
@@ -334,7 +342,7 @@ static void AppTaskCreate (void)
 	
 	xTaskCreate( vTaskLED2,    		      /* 任务函数  */
                  "vTaskLED2",  		    /* 任务名    */
-                 512,         		    /* 任务栈大小，单位word，也就是4字节 */
+                 1024,         		    /* 任务栈大小，单位word，也就是4字节 */
                  NULL,        		    /* 任务参数  */
                  3,           		    /* 任务优先级*/
                  &xHandleTaskLED2 );  /* 任务句柄  */

@@ -41,8 +41,8 @@ void KEY_GPIO_Init(void);
 uint8_t GetPinStateOfKey1(void);
 uint8_t GetPinStateOfKey2(void);
 uint8_t GetPinStateOfKey3(void);
-uint8_t GetPinStateOfKey4(void);
-uint8_t GetPinStateOfKey5(void);
+//uint8_t GetPinStateOfKey4(void);
+//uint8_t GetPinStateOfKey5(void);
 
 
 /* ------------------------用户函数声明结束 ----------------------------------*/
