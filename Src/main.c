@@ -40,7 +40,7 @@ typedef struct Msg
 MSG_T  g_tMsg; /* ¶¨ÒåÒ»¸ö½á¹¹ÌåÓÃÓÚÏûÏ¢¶ÓÁĞ */
 
 /* À©Õ¹±äÁ¿ ------------------------------------------------------------------*/
-extern __IO uint16_t CCR1_Val;
+
 
 /* Ë½ÓĞº¯ÊıÔ­ĞÎ --------------------------------------------------------------*/
 static void vTaskTaskUserIF(void *pvParameters);
@@ -159,14 +159,18 @@ static void vTaskTaskUserIF(void *pvParameters)
       Key_RefreshState(&key2);//Ë¢ĞÂ°´¼ü×´Ì¬
       Key_RefreshState(&key3);//Ë¢ĞÂ°´¼ü×´Ì¬
    
-      #if 0
+      #if 1
 	  HAL_UART_Receive(&husart_debug,aRxBuffer,8,0xffff);
 	   printf("aRxBuffer[0]=%#x \n",aRxBuffer[0]);
 	   printf("aRxBuffer[1]=%#x \n",aRxBuffer[1]);
 	   printf("aRxBuffer[2]=%#x \n",aRxBuffer[2]);
+	   printf("aRxBuffer[0]=%#x \n",aRxBuffer[3]);
+	   printf("aRxBuffer[1]=%#x \n",aRxBuffer[4]);
+	   printf("aRxBuffer[2]=%#x \n",aRxBuffer[5]);
+	   printf("aRxBuffer[2]=%#x \n",aRxBuffer[6]);
 	   printf("aRxBuffer[7]=%#x \n",aRxBuffer[7]);
 	   #endif 
-      if(Key_AccessTimes(&key1,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
+       if(aRxBuffer[0]==0x00)//if(Key_AccessTimes(&key1,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
       {
         printf("=================================================\r\n");
         printf("ÈÎÎñÃû      ÈÎÎñ×´Ì¬ ÓÅÏÈ¼¶   Ê£ÓàÕ» ÈÎÎñĞòºÅ\r\n");
@@ -179,56 +183,87 @@ static void vTaskTaskUserIF(void *pvParameters)
         Key_AccessTimes(&key1,KEY_ACCESS_WRITE_CLEAR);
       }
       
-      if(Key_AccessTimes(&key2,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
+      if(aRxBuffer[0]==0xa1)//if(Key_AccessTimes(&key2,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
       {         
           printf("KEY2°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
-		   MSG_T   *ptMsg=NULL;
+		 
+          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      
+           g_uiCount=aRxBuffer[0];
+		  	  
+		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
+		   xQueueSendFromISR(xQueue1,
+					  (void *)&g_uiCount,
+					   &xHigherPriorityTaskWoken);
+			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+			Key_AccessTimes(&key2,KEY_ACCESS_WRITE_CLEAR);
+		}  
+	   if(aRxBuffer[0]==0xa2)
+	   {
+		  MSG_T   *ptMsg=NULL;
           BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       
          /* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
           ptMsg = &g_tMsg;
           
-		
-		  
 		  /* ³õÊ¼»¯Êı×é */
-		  ptMsg->ucMessageID++;
-		  ptMsg->ulData[0]++;
-		  ptMsg->usData[0]++;
-		  	  
-		 
-		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
+		  ptMsg->ucMessageID=aRxBuffer[0];
+		  ptMsg->ulData[0]=aRxBuffer[1];
+		  ptMsg->usData[0]=aRxBuffer[2];
+		   
+		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾-İ   --WT.EDIT */
 			xQueueSendFromISR(xQueue2,
-					  (void *)&g_tMsg,
-					   &xHigherPriorityTaskWoken);
-			  
-			/* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾-İ   --WT.EDIT */
-			xQueueSendFromISR(xQueue4,
 					  (void *)&g_tMsg,
 					   &xHigherPriorityTaskWoken);
 			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 			Key_AccessTimes(&key2,KEY_ACCESS_WRITE_CLEAR);
 	  }
       
-      if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
+      if(aRxBuffer[0]==0xa3)//if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
       {         
-         printf("KEY3°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
-		 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+          MSG_T   *ptMsg=NULL;
+          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       
-         g_uiCount++;
+         /* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
+          ptMsg = &g_tMsg;
+          
+		  /* ³õÊ¼»¯Êı×é */
+		  ptMsg->ucMessageID=aRxBuffer[0];
+		  ptMsg->ulData[0]=aRxBuffer[1];
+		  ptMsg->usData[0]=aRxBuffer[2];
       
-		  /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
-        xQueueSendFromISR(xQueue1,
-                  (void *)&g_uiCount,
+         /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
+         xQueueSendFromISR(xQueue3,
+                  (void *)&g_tMsg,
                   &xHigherPriorityTaskWoken);
+		 portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+         Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);  
 				  
-		 /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
-        xQueueSendFromISR(xQueue3,
-                  (void *)&g_uiCount,
+	   }
+       if(aRxBuffer[0]==0xa4)
+	   {		   
+		  MSG_T   *ptMsg=NULL;
+          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      
+         /* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
+          ptMsg = &g_tMsg;
+          
+		  /* ³õÊ¼»¯Êı×é */
+		  ptMsg->ucMessageID=aRxBuffer[0];
+		  ptMsg->ulData[0]=aRxBuffer[1];
+		  ptMsg->usData[0]=aRxBuffer[2];
+		   
+		   
+		   
+		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
+               xQueueSendFromISR(xQueue4,
+                  (void *)&g_tMsg,
                   &xHigherPriorityTaskWoken);
+				 
 
         /* Èç¹ûxHigherPriorityTaskWoken = pdTRUE£¬ÄÇÃ´ÍË³öÖĞ¶ÏºóÇĞµ½µ±Ç°×î¸ßÓÅÏÈ¼¶ÈÎÎñÖ´ĞĞ */
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-        //HAL_TIM_OC_Start_IT(&htim2,TIM_CHANNEL_2);
+        
         Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
 	   }
          
@@ -297,9 +332,9 @@ static void vTaskY_axis(void *pvParameters)
     {
       
        /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
-      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
-      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
+	  printf("Y_axis:ptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
+      printf("Y_axis:ptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
+      printf("Y_axis:tMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
 	  STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // XÖá·´ÏòÒÆ¶¯30È¦
 		
 	 
@@ -322,22 +357,24 @@ static void vTaskY_axis(void *pvParameters)
 ***************************************************/
 static void vTaskZ_axis(void *pvParameters)
 {
-   BaseType_t xResult;
-  const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª300ms */
-  uint8_t ucQueueMsgValue;
+    MSG_T *ptMsg;
+	BaseType_t xResult;
+	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
 	
 
   while(1)
   {
     xResult = xQueueReceive(xQueue3,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
-                            (void *)&ucQueueMsgValue,  		   /* ÕâÀï»ñÈ¡µÄÊÇ½á¹¹ÌåµÄµØÖ· */
+                            (void *)&ptMsg,  		   /* ÕâÀï»ñÈ¡µÄÊÇ½á¹¹ÌåµÄµØÖ· */
                             (TickType_t)xMaxBlockTime);/* ÉèÖÃ×èÈûÊ±¼ä */
 
 
     if(xResult == pdPASS)
     {
       /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-		printf(" Z_axis:ucQueueMsgValue = %d\r\n", ucQueueMsgValue);
+	    printf("Z_axis:tMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
+		printf("Z_axis:ptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
+		printf("Z_axis:tMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
 	  //STEPMOTOR_DisMoveAbs(AXIS_Z,400,step_accel,step_decel,set_speed);//XÖáÒÆ¶¯µ½400mmµÄÎ»ÖÃ
 	   STEPMOTOR_AxisMoveRel(AXIS_Z,30*SPR*CCW,step_accel,step_decel,set_speed); // ZÖá·´ÏòÒÆ¶¯30È¦
 	}
@@ -374,9 +411,9 @@ static void vTaskR_axis(void *pvParameters)
 		if(xResult == pdPASS)
 		{
 		  /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-			printf("R_axis=ptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
-            printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
-            printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
+			printf("R_axis:ptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
+            printf("R_axis:ptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
+            printf("R_axis:ptMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
 			STEPMOTOR_AxisMoveRel(AXIS_R,30*SPR*CW,step_accel,step_decel,set_speed);  // RÖáÕıÏòÒÆ¶¯30È¦
 	
 		}
@@ -404,14 +441,14 @@ static void AppTaskCreate (void)
                  "vTaskUserIF",     	/* ÈÎÎñÃû    */
                  1024,               	/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,              	/* ÈÎÎñ²ÎÊı  */
-                 1,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
+                 5,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskUserIF );  /* ÈÎÎñ¾ä±ú  */
 	
     xTaskCreate( vTaskX_axis,   	      /* ÈÎÎñº¯Êı  */
                  "vTaskX_axis",     	  /* ÈÎÎñÃû    */
                  1024,               	/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,              	/* ÈÎÎñ²ÎÊı  */
-                 2,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
+                 4,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskX_axis );  /* ÈÎÎñ¾ä±ú  */
 	
 	
@@ -426,14 +463,14 @@ static void AppTaskCreate (void)
                  "vTaskZ_axis",   		  /* ÈÎÎñÃû    */
                  1024,             		/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,           		  /* ÈÎÎñ²ÎÊı  */
-                 4,               		/* ÈÎÎñÓÅÏÈ¼¶*/
+                 2,               		/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskZ_axis );  /* ÈÎÎñ¾ä±ú  */
 	
 	xTaskCreate( vTaskR_axis,     		    /* ÈÎÎñº¯Êı  */
                  "vTaskR_axis",   		  /* ÈÎÎñÃû    */
                  1024,             		/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,           		  /* ÈÎÎñ²ÎÊı  */
-                 5,               		/* ÈÎÎñÓÅÏÈ¼¶*/
+                 1,               		/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskR_axis );  /* ÈÎÎñ¾ä±ú  */
 	
 }
@@ -463,7 +500,7 @@ static void AppObjCreate (void)
 		printf("xQueue2 don't set up ERROR !\n");
     }
 	/* ´´½¨10¸ö´æ´¢Ö¸Õë±äÁ¿µÄÏûÏ¢¶ÓÁĞ£¬ÓÉÓÚCM3/CM4ÄÚºËÊÇ32Î»»ú£¬Ò»¸öÖ¸Õë±äÁ¿Õ¼ÓÃ4¸ö×Ö½Ú */
-	xQueue3 = xQueueCreate(10, sizeof(uint8_t));
+	xQueue3 = xQueueCreate(10, sizeof(struct Msg *));
     if( xQueue3 == 0 )
     {
         /* Ã»ÓĞ´´½¨³É¹¦£¬ÓÃ»§¿ÉÒÔÔÚÕâÀï¼ÓÈë´´½¨Ê§°ÜµÄ´¦Àí»úÖÆ */
