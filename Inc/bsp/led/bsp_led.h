@@ -17,7 +17,8 @@ typedef enum
 #define LED1                          (uint8_t)0x01
 #define LED2                          (uint8_t)0x02
 #define LED3                          (uint8_t)0x04
-#define IS_LED_TYPEDEF(LED)           (((LED) == LED1) || ((LED) == LED2) || ((LED) == LED3))
+#define LED4                          (uint8_t)0x08
+#define IS_LED_TYPEDEF(LED)           (((LED) == LED1) || ((LED) == LED2) || ((LED) == LED3)||((LED)==LED4))
 
 /*
  * 以下宏定义内容跟开发板硬件息息相关，需要查看开发板电路原理图才能正确编写。
@@ -39,17 +40,26 @@ typedef enum
 #define LED3_GPIO_PIN                 GPIO_PIN_4 //WT.EDIT
 #define LED3_GPIO                     GPIOI
 
-#define LED1_ON                       HAL_GPIO_WritePin(LED1_GPIO,LED1_GPIO_PIN,GPIO_PIN_SET)    // 输出高电平
-#define LED1_OFF                      HAL_GPIO_WritePin(LED1_GPIO,LED1_GPIO_PIN,GPIO_PIN_RESET)  // 输出低电平
+
+#define LED4_RCC_CLK_ENABLE()         __HAL_RCC_GPIOB_CLK_ENABLE()
+#define LED4_GPIO_PIN                 GPIO_PIN_9 //WT.EDIT
+#define LED4_GPIO                     GPIOB
+
+#define LED1_OFF                       HAL_GPIO_WritePin(LED1_GPIO,LED1_GPIO_PIN,GPIO_PIN_SET)    // 输出高电平
+#define LED1_ON                      HAL_GPIO_WritePin(LED1_GPIO,LED1_GPIO_PIN,GPIO_PIN_RESET)  // 输出低电平
 #define LED1_TOGGLE                   HAL_GPIO_TogglePin(LED1_GPIO,LED1_GPIO_PIN)                // 输出反转
 
-#define LED2_ON                       HAL_GPIO_WritePin(LED2_GPIO,LED2_GPIO_PIN,GPIO_PIN_SET)    // 输出高电平
-#define LED2_OFF                      HAL_GPIO_WritePin(LED2_GPIO,LED2_GPIO_PIN,GPIO_PIN_RESET)  // 输出低电平
+#define LED2_OFF                       HAL_GPIO_WritePin(LED2_GPIO,LED2_GPIO_PIN,GPIO_PIN_SET)    // 输出高电平
+#define LED2_ON                      HAL_GPIO_WritePin(LED2_GPIO,LED2_GPIO_PIN,GPIO_PIN_RESET)  // 输出低电平
 #define LED2_TOGGLE                   HAL_GPIO_TogglePin(LED2_GPIO,LED2_GPIO_PIN)                // 输出反转
 
-#define LED3_ON                       HAL_GPIO_WritePin(LED3_GPIO,LED3_GPIO_PIN,GPIO_PIN_SET)    // 输出高电平
-#define LED3_OFF                      HAL_GPIO_WritePin(LED3_GPIO,LED3_GPIO_PIN,GPIO_PIN_RESET)  // 输出低电平
+#define LED3_OFF                       HAL_GPIO_WritePin(LED3_GPIO,LED3_GPIO_PIN,GPIO_PIN_SET)    // 输出高电平
+#define LED3_ON                     HAL_GPIO_WritePin(LED3_GPIO,LED3_GPIO_PIN,GPIO_PIN_RESET)  // 输出低电平
 #define LED3_TOGGLE                   HAL_GPIO_TogglePin(LED3_GPIO,LED3_GPIO_PIN)                // 输出反转
+
+#define LED4_OFF                      HAL_GPIO_WritePin(LED4_GPIO,LED4_GPIO_PIN,GPIO_PIN_SET)    // 输出高电平
+#define LED4_ON                      HAL_GPIO_WritePin(LED4_GPIO,LED4_GPIO_PIN,GPIO_PIN_RESET)  // 输出低电平
+#define LED4_TOGGLE                   HAL_GPIO_TogglePin(LED4_GPIO,LED4_GPIO_PIN)                // 输出反转
 
 
 /* 扩展变量 ------------------------------------------------------------------*/

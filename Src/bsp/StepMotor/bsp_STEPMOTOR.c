@@ -173,7 +173,7 @@ static void STEPMOTOR_GPIO_Init()
     GPIO_InitStruct.Alternate = GPIO_SET_AF_NORMAL;
     HAL_GPIO_Init(LimPos_Detect[i].Port, &GPIO_InitStruct);
 
-     #if 1
+     #if 0
     /* 引脚中断优先级配置与使能*/
     if(Origin_Detect[i].IRQn < EXTI9_5_IRQn)    //line5~lin9的中断配置只需要配置一次就行了,无需重复
     {
@@ -192,12 +192,13 @@ static void STEPMOTOR_GPIO_Init()
     }
 	#endif
   }
+  #if 0
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);  
   
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-   
+   #endif 
 }
 /*****************************************************
   *

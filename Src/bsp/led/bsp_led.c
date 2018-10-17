@@ -1,20 +1,3 @@
-/**
-  ******************************************************************************
-  * 文件名程: bsp_led.c 
-  * 作    者: 硬石嵌入式开发团队
-  * 版    本: V1.0
-  * 编写日期: 2017-3-30
-  * 功    能: 基于的HAL库的工程模板
-  ******************************************************************************
-  * 说明：
-  * 本例程配套硬石stm32开发板YS-F4Pro使用。
-  * 
-  * 淘宝：
-  * 论坛：http://www.ing10bbs.com
-  * 版权归硬石嵌入式开发团队所有，请勿商用。
-  ******************************************************************************
-  */
-/* 包含头文件 ----------------------------------------------------------------*/
 #include "led/bsp_led.h"
 
 /* 私有类型定义 --------------------------------------------------------------*/
@@ -40,12 +23,19 @@ void LED_GPIO_Init(void)
   LED1_RCC_CLK_ENABLE();
   LED2_RCC_CLK_ENABLE();
   LED3_RCC_CLK_ENABLE();
+  LED4_RCC_CLK_ENABLE();
+	
   /* 配置LED1引脚输出电压 */
   HAL_GPIO_WritePin(LED1_GPIO, LED1_GPIO_PIN, GPIO_PIN_RESET);
   /* 配置LED2引脚输出电压 */
   HAL_GPIO_WritePin(LED2_GPIO, LED2_GPIO_PIN, GPIO_PIN_RESET);
   /* 配置LED3引脚输出电压 */
-  HAL_GPIO_WritePin(LED2_GPIO, LED3_GPIO_PIN, GPIO_PIN_RESET);  
+  HAL_GPIO_WritePin(LED3_GPIO, LED3_GPIO_PIN, GPIO_PIN_RESET);  
+  /* 配置LED4引脚输出电压 */
+  HAL_GPIO_WritePin(LED4_GPIO, LED4_GPIO_PIN, GPIO_PIN_RESET);  
+	
+	
+	
   /* 设定LED1对应引脚IO编号 */
   GPIO_InitStruct.Pin = LED1_GPIO_PIN;
   /* 设定LED1对应引脚IO为输出模式 */
@@ -72,6 +62,16 @@ void LED_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   /* 初始化LED3对应引脚IO */
   HAL_GPIO_Init(LED3_GPIO, &GPIO_InitStruct);
+  
+  
+  /* 设定LED4对应引脚IO编号 */
+  GPIO_InitStruct.Pin = LED4_GPIO_PIN;
+  /* 设定LED3对应引脚IO为输出模式 */
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  /* 设定LED3对应引脚IO操作速度 */
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  /* 初始化LED3对应引脚IO */
+  HAL_GPIO_Init(LED4_GPIO, &GPIO_InitStruct);
   
 }
 
@@ -113,6 +113,9 @@ void LEDx_StateSet(uint8_t LEDx,LEDState_TypeDef state)
     
     if(LEDx & LED3)
       LED3_ON;/* LED3亮 */ 
+	
+	if(LEDx & LED4)
+      LED4_ON;/* LED3亮 */ 
   }
   else
   {
@@ -124,7 +127,10 @@ void LEDx_StateSet(uint8_t LEDx,LEDState_TypeDef state)
     
     if(LEDx & LED3)
       LED3_TOGGLE;/* 设置引脚输出反转 */ 
+	
+	if(LEDx & LED4)
+      LED4_TOGGLE;/* 设置引脚输出反转 */ 
   }
 }
 
-/******************* (C) COPYRIGHT 2015-2020 硬石嵌入式开发团队 *****END OF FILE****/
+

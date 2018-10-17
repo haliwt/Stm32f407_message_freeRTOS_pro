@@ -11,11 +11,14 @@
 /* Ë½ÓĞºê¶¨Òå ----------------------------------------------------------------*/
 /* Ë½ÓĞ±äÁ¿ ------------------------------------------------------------------*/
 static TaskHandle_t xHandleTaskUserIF = NULL;
-static TaskHandle_t xHandleTaskLED1 = NULL;
-static TaskHandle_t xHandleTaskLED2 = NULL;
-static TaskHandle_t xHandleTaskLED3 = NULL;
+static TaskHandle_t xHandleTaskX_axis = NULL;
+static TaskHandle_t xHandleTaskY_axis = NULL;
+static TaskHandle_t xHandleTaskZ_axis = NULL;
+static TaskHandle_t xHandleTaskR_axis = NULL;
 static QueueHandle_t xQueue1 = NULL;
 static QueueHandle_t xQueue2 = NULL;
+static QueueHandle_t xQueue3 = NULL; //WT.EDIT
+static QueueHandle_t xQueue4 = NULL; //WT.EDIT
 
 KEY key1,key2,key3,key4,key5;
 
@@ -34,16 +37,17 @@ typedef struct Msg
 	uint32_t ulData[2];
 }MSG_T;
 
-MSG_T   g_tMsg; /* ¶¨ÒåÒ»¸ö½á¹¹ÌåÓÃÓÚÏûÏ¢¶ÓÁĞ */
+MSG_T  g_tMsg; /* ¶¨ÒåÒ»¸ö½á¹¹ÌåÓÃÓÚÏûÏ¢¶ÓÁĞ */
 
 /* À©Õ¹±äÁ¿ ------------------------------------------------------------------*/
 extern __IO uint16_t CCR1_Val;
 
 /* Ë½ÓĞº¯ÊıÔ­ĞÎ --------------------------------------------------------------*/
 static void vTaskTaskUserIF(void *pvParameters);
-static void vTaskLED1(void *pvParameters);
-static void vTaskLED2(void *pvParameters);
-static void vTaskLED3(void *pvParameters);
+static void vTaskX_axis(void *pvParameters);
+static void vTaskY_axis(void *pvParameters);
+static void vTaskZ_axis(void *pvParameters);
+static void vTaskR_axis(void *pvParameters);  //WT.EDIT 
 static void AppTaskCreate (void);
 static void AppObjCreate (void);
 
@@ -138,6 +142,7 @@ int main(void)
   * Ëµ    Ã÷: ÎŞ
   */
 static uint32_t g_uiCount = 0; /* ÉèÖÃÎªÈ«¾Ö¾²Ì¬±äÁ¿£¬·½±ãÊı¾İ¸üĞÂ */
+
 static void vTaskTaskUserIF(void *pvParameters)
 {
   uint8_t pcWriteBuffer[500];
@@ -176,43 +181,56 @@ static void vTaskTaskUserIF(void *pvParameters)
       
       if(Key_AccessTimes(&key2,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
       {         
-        printf("KEY2°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
+          printf("KEY2°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
+		   MSG_T   *ptMsg=NULL;
+          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      
+         /* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
+          ptMsg = &g_tMsg;
+          
+		
 		  
-	   MSG_T   *ptMsg;
-       BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      
-      /* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
-      ptMsg = &g_tMsg;
-      
-      /* ³õÊ¼»¯Êı×é */
-      ptMsg->ucMessageID++;
-      ptMsg->ulData[0]++;
-      ptMsg->usData[0]++;
-		 /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
-        xQueueSendFromISR(xQueue2,
-                  (void *)&ptMsg,
-                   &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-        Key_AccessTimes(&key2,KEY_ACCESS_WRITE_CLEAR);
-		  }
+		  /* ³õÊ¼»¯Êı×é */
+		  ptMsg->ucMessageID++;
+		  ptMsg->ulData[0]++;
+		  ptMsg->usData[0]++;
+		  	  
+		 
+		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
+			xQueueSendFromISR(xQueue2,
+					  (void *)&g_tMsg,
+					   &xHigherPriorityTaskWoken);
+			  
+			/* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾-İ   --WT.EDIT */
+			xQueueSendFromISR(xQueue4,
+					  (void *)&g_tMsg,
+					   &xHigherPriorityTaskWoken);
+			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+			Key_AccessTimes(&key2,KEY_ACCESS_WRITE_CLEAR);
+	  }
       
       if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
       {         
-        printf("KEY3°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
-		   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+         printf("KEY3°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
+		 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       
          g_uiCount++;
       
 		  /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
-      xQueueSendFromISR(xQueue1,
+        xQueueSendFromISR(xQueue1,
+                  (void *)&g_uiCount,
+                  &xHigherPriorityTaskWoken);
+				  
+		 /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
+        xQueueSendFromISR(xQueue3,
                   (void *)&g_uiCount,
                   &xHigherPriorityTaskWoken);
 
-      /* Èç¹ûxHigherPriorityTaskWoken = pdTRUE£¬ÄÇÃ´ÍË³öÖĞ¶ÏºóÇĞµ½µ±Ç°×î¸ßÓÅÏÈ¼¶ÈÎÎñÖ´ĞĞ */
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        /* Èç¹ûxHigherPriorityTaskWoken = pdTRUE£¬ÄÇÃ´ÍË³öÖĞ¶ÏºóÇĞµ½µ±Ç°×î¸ßÓÅÏÈ¼¶ÈÎÎñÖ´ĞĞ */
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         //HAL_TIM_OC_Start_IT(&htim2,TIM_CHANNEL_2);
         Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
-		  }
+	   }
          
      vTaskDelay(20);
   }
@@ -225,26 +243,27 @@ static void vTaskTaskUserIF(void *pvParameters)
   * ·µ »Ø Öµ: ÎŞ
   * Ëµ    Ã÷: ÎŞ
   */
-static void vTaskLED1(void *pvParameters)
+static void vTaskX_axis(void *pvParameters)
 {
-	MSG_T *ptMsg;
-	BaseType_t xResult;
-	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
+  BaseType_t xResult;
+  const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª300ms */
+  uint8_t ucQueueMsgValue;
 	
 
   while(1)
   {
-    xResult = xQueueReceive(xQueue2,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
-                            (void *)&ptMsg,  		   /* ÕâÀï»ñÈ¡µÄÊÇ½á¹¹ÌåµÄµØÖ· */
+    xResult = xQueueReceive(xQueue1,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
+                            (void *)&ucQueueMsgValue,  		   /* ÕâÀï»ñÈ¡µÄÊÇ½á¹¹ÌåµÄµØÖ· */
                             (TickType_t)xMaxBlockTime);/* ÉèÖÃ×èÈûÊ±¼ä */
 
 
     if(xResult == pdPASS)
     {
       /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
-      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
-      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
+		printf("X_axis:ucQueueMsgValue = %d\r\n", ucQueueMsgValue);
+	 // STEPMOTOR_DisMoveAbs(AXIS_X,400,step_accel,step_decel,set_speed);//XÖáÒÆ¶¯µ½400mmµÄÎ»ÖÃ ¾Ö¶Ô¾àÀë
+	   STEPMOTOR_AxisMoveRel(AXIS_X,30*SPR*CCW,step_accel,step_decel,set_speed); // ZÖá·´ÏòÒÆ¶¯30È¦£¬Ïà¶Ô¾àÀë
+	  
     }
     else
     {
@@ -254,63 +273,130 @@ static void vTaskLED1(void *pvParameters)
   }
 }
 
-/**
+/***********************************************************
+  *
   * º¯Êı¹¦ÄÜ: LED2ÈÎÎñ
   * ÊäÈë²ÎÊı: ÎŞ
   * ·µ »Ø Öµ: ÎŞ
   * Ëµ    Ã÷: ÎŞ
-  */
-static void vTaskLED2(void *pvParameters)
+  *
+***********************************************************/
+static void vTaskY_axis(void *pvParameters)
 {
-  BaseType_t xResult;
-  const TickType_t xMaxBlockTime = pdMS_TO_TICKS(300); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª300ms */
-  uint8_t ucQueueMsgValue;
+    MSG_T *ptMsg;
+	BaseType_t xResult;
+	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
 
   while(1)
   {
-   xResult = xQueueReceive(xQueue1,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
-                          (void *)&ucQueueMsgValue,  /* ´æ´¢½ÓÊÕµ½µÄÊı¾İµ½±äÁ¿ucQueueMsgValueÖĞ */
+   xResult = xQueueReceive(xQueue2,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
+                          (void *)&ptMsg,  /* ´æ´¢½ÓÊÕµ½µÄÊı¾İµ½±äÁ¿ucQueueMsgValueÖĞ */
                           (TickType_t)xMaxBlockTime);/* ÉèÖÃ×èÈûÊ±¼ä */
   
     if(xResult == pdPASS)
     {
-      /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-        printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İucQueueMsgValue = %d\r\n", ucQueueMsgValue);
-		STEPMOTOR_AxisMoveRel(AXIS_X,30*SPR*CCW,step_accel,step_decel,set_speed); // XÖá·´ÏòÒÆ¶¯30È¦
-		STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CW,step_accel,step_decel,set_speed);  // YÖáÕıÏòÒÆ¶¯30È¦
-		STEPMOTOR_AxisMoveRel(AXIS_Z,30*SPR*CCW,step_accel,step_decel,set_speed); // ZÖá·´ÏòÒÆ¶¯30È¦
-		STEPMOTOR_AxisMoveRel(AXIS_R,30*SPR*CW,step_accel,step_decel,set_speed);  // RÖáÕıÏòÒÆ¶¯30È¦
-	  //STEPMOTOR_AxisMoveRel_R(6400*5, step_accel, step_decel, set_speed);
-	 // STEPMOTOR_AxisMoveRel_Z(6400*5, step_accel, step_decel, set_speed);
+      
+       /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
+      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
+      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
+      printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
+	  STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // XÖá·´ÏòÒÆ¶¯30È¦
+		
+	 
     }
     else
     {
       LED2_TOGGLE;
     }
+	
   }
 }
 
-/**
-  * º¯Êı¹¦ÄÜ: LED3ÈÎÎñ
+/**************************************************
+  *
+  * º¯Êı¹¦ÄÜ: Z_axisÈÎÎñ
   * ÊäÈë²ÎÊı: ÎŞ
   * ·µ »Ø Öµ: ÎŞ
   * Ëµ    Ã÷: ÎŞ
-  */
-static void vTaskLED3(void *pvParameters)
+  *
+***************************************************/
+static void vTaskZ_axis(void *pvParameters)
+{
+   BaseType_t xResult;
+  const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª300ms */
+  uint8_t ucQueueMsgValue;
+	
+
+  while(1)
+  {
+    xResult = xQueueReceive(xQueue3,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
+                            (void *)&ucQueueMsgValue,  		   /* ÕâÀï»ñÈ¡µÄÊÇ½á¹¹ÌåµÄµØÖ· */
+                            (TickType_t)xMaxBlockTime);/* ÉèÖÃ×èÈûÊ±¼ä */
+
+
+    if(xResult == pdPASS)
+    {
+      /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
+		printf(" Z_axis:ucQueueMsgValue = %d\r\n", ucQueueMsgValue);
+	  //STEPMOTOR_DisMoveAbs(AXIS_Z,400,step_accel,step_decel,set_speed);//XÖáÒÆ¶¯µ½400mmµÄÎ»ÖÃ
+	   STEPMOTOR_AxisMoveRel(AXIS_Z,30*SPR*CCW,step_accel,step_decel,set_speed); // ZÖá·´ÏòÒÆ¶¯30È¦
+	}
+    else
+    {
+      LED3_TOGGLE;
+
+    }
+	
+  }
+}
+/**************************************************
+  *
+  * º¯Êı¹¦ÄÜ: R_axisÈÎÎñ
+  * ÊäÈë²ÎÊı: ÎŞ
+  * ·µ »Ø Öµ: ÎŞ
+  * Ëµ    Ã÷: ÎŞ
+  *
+***************************************************/
+static void vTaskR_axis(void *pvParameters)
 {
     while(1)
     {
-      LED3_TOGGLE;
-      vTaskDelay(1000);
-    }
+       MSG_T *ptMsg;
+	   BaseType_t xResult;
+	   const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
+
+	  while(1)
+	  {
+	   xResult = xQueueReceive(xQueue4,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
+							  (void *)&ptMsg,  /* ´æ´¢½ÓÊÕµ½µÄÊı¾İµ½±äÁ¿ucQueueMsgValueÖĞ */
+							  (TickType_t)xMaxBlockTime);/* ÉèÖÃ×èÈûÊ±¼ä */
+	  
+		if(xResult == pdPASS)
+		{
+		  /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
+			printf("R_axis=ptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
+            printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
+            printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
+			STEPMOTOR_AxisMoveRel(AXIS_R,30*SPR*CW,step_accel,step_decel,set_speed);  // RÖáÕıÏòÒÆ¶¯30È¦
+	
+		}
+		else
+		{
+		  LED4_TOGGLE;
+		}
+	  }
+	  
+   }
 }
 
-/**
+/***************************************************
+  *
   * º¯Êı¹¦ÄÜ: ´´½¨ÈÎÎñÓ¦ÓÃ
   * ÊäÈë²ÎÊı: ÎŞ
   * ·µ »Ø Öµ: ÎŞ
   * Ëµ    Ã÷: ÎŞ
-  */
+  *
+**************************************************/
 static void AppTaskCreate (void)
 {
 
@@ -321,27 +407,34 @@ static void AppTaskCreate (void)
                  1,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskUserIF );  /* ÈÎÎñ¾ä±ú  */
 	
-    xTaskCreate( vTaskLED1,   	      /* ÈÎÎñº¯Êı  */
-                 "vTaskLED1",     	  /* ÈÎÎñÃû    */
+    xTaskCreate( vTaskX_axis,   	      /* ÈÎÎñº¯Êı  */
+                 "vTaskX_axis",     	  /* ÈÎÎñÃû    */
                  1024,               	/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,              	/* ÈÎÎñ²ÎÊı  */
                  2,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
-                 &xHandleTaskLED1 );  /* ÈÎÎñ¾ä±ú  */
+                 &xHandleTaskX_axis );  /* ÈÎÎñ¾ä±ú  */
 	
 	
-	xTaskCreate( vTaskLED2,    		      /* ÈÎÎñº¯Êı  */
-                 "vTaskLED2",  		    /* ÈÎÎñÃû    */
+	xTaskCreate( vTaskY_axis,    		      /* ÈÎÎñº¯Êı  */
+                 "vTaskY_axis",  		    /* ÈÎÎñÃû    */
                  1024,         		    /* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,        		    /* ÈÎÎñ²ÎÊı  */
                  3,           		    /* ÈÎÎñÓÅÏÈ¼¶*/
-                 &xHandleTaskLED2 );  /* ÈÎÎñ¾ä±ú  */
+                 &xHandleTaskY_axis);  /* ÈÎÎñ¾ä±ú  */
 	
-	xTaskCreate( vTaskLED3,     		    /* ÈÎÎñº¯Êı  */
-                 "vTaskLED3",   		  /* ÈÎÎñÃû    */
-                 512,             		/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
+	xTaskCreate( vTaskZ_axis,     		    /* ÈÎÎñº¯Êı  */
+                 "vTaskZ_axis",   		  /* ÈÎÎñÃû    */
+                 1024,             		/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,           		  /* ÈÎÎñ²ÎÊı  */
                  4,               		/* ÈÎÎñÓÅÏÈ¼¶*/
-                 &xHandleTaskLED3 );  /* ÈÎÎñ¾ä±ú  */
+                 &xHandleTaskZ_axis );  /* ÈÎÎñ¾ä±ú  */
+	
+	xTaskCreate( vTaskR_axis,     		    /* ÈÎÎñº¯Êı  */
+                 "vTaskR_axis",   		  /* ÈÎÎñÃû    */
+                 1024,             		/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
+                 NULL,           		  /* ÈÎÎñ²ÎÊı  */
+                 5,               		/* ÈÎÎñÓÅÏÈ¼¶*/
+                 &xHandleTaskR_axis );  /* ÈÎÎñ¾ä±ú  */
 	
 }
 
@@ -359,6 +452,7 @@ static void AppObjCreate (void)
     if( xQueue1 == 0 )
     {
         /* Ã»ÓĞ´´½¨³É¹¦£¬ÓÃ»§¿ÉÒÔÔÚÕâÀï¼ÓÈë´´½¨Ê§°ÜµÄ´¦Àí»úÖÆ */
+		printf("xQueue1 don't set up ERROR !\n");
     }
 	
 	/* ´´½¨10¸ö´æ´¢Ö¸Õë±äÁ¿µÄÏûÏ¢¶ÓÁĞ£¬ÓÉÓÚCM3/CM4ÄÚºËÊÇ32Î»»ú£¬Ò»¸öÖ¸Õë±äÁ¿Õ¼ÓÃ4¸ö×Ö½Ú */
@@ -366,7 +460,20 @@ static void AppObjCreate (void)
     if( xQueue2 == 0 )
     {
         /* Ã»ÓĞ´´½¨³É¹¦£¬ÓÃ»§¿ÉÒÔÔÚÕâÀï¼ÓÈë´´½¨Ê§°ÜµÄ´¦Àí»úÖÆ */
+		printf("xQueue2 don't set up ERROR !\n");
+    }
+	/* ´´½¨10¸ö´æ´¢Ö¸Õë±äÁ¿µÄÏûÏ¢¶ÓÁĞ£¬ÓÉÓÚCM3/CM4ÄÚºËÊÇ32Î»»ú£¬Ò»¸öÖ¸Õë±äÁ¿Õ¼ÓÃ4¸ö×Ö½Ú */
+	xQueue3 = xQueueCreate(10, sizeof(uint8_t));
+    if( xQueue3 == 0 )
+    {
+        /* Ã»ÓĞ´´½¨³É¹¦£¬ÓÃ»§¿ÉÒÔÔÚÕâÀï¼ÓÈë´´½¨Ê§°ÜµÄ´¦Àí»úÖÆ */
+		printf("xQueue3 don't set up ERROR !\n");
+    }
+	xQueue4 = xQueueCreate(10, sizeof(struct Msg *));
+    if( xQueue4 == 0 )
+    {
+        printf("xQueue4 don't set up ERROR !\n");
     }
 }
-/******************* (C) COPYRIGHT 2015-2020 Ó²Ê¯Ç¶ÈëÊ½¿ª·¢ÍÅ¶Ó *****END OF FILE****/
+
 

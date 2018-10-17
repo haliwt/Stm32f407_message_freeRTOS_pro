@@ -235,4 +235,4 @@ void STEPMOTOR_DisMoveRel( uint8_t Axis, int16_t distance, uint32_t accel, uint3
 void STEPMOTOR_DisMoveAbs( uint8_t Axis, uint16_t Target_Dis, uint32_t accel, uint32_t decel, uint32_t speed);
 
 #endif	/* __STEPMOTOR_TIM_H__ */
-/******************* (C) COPYRIGHT 2015-2020 硬石嵌入式开发团队 *****END OF FILE****/
+
