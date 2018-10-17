@@ -1,27 +1,11 @@
-/**
-  ******************************************************************************
-  * 文件名程: main.c 
-  * 作    者: 硬石嵌入式开发团队
-  * 版    本: V1.0
-  * 编写日期: 2017-3-30
-  * 功    能: 消息队列（中断方式）
-  ******************************************************************************
-  * 说明：
-  * 本例程配套硬石stm32开发板YS-F4Pro使用。
-  * 
-  * 淘宝：
-  * 论坛：http://www.ing10bbs.com
-  * 版权归硬石嵌入式开发团队所有，请勿商用。
-  ******************************************************************************
-  */
-/* 包含头文件 ----------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 #include "led/bsp_led.h"
-#include "R_axis/r_axis.h" 
+//#include "R_axis/r_axis.h" 
 #include "usart/bsp_debug_usart.h"
 #include "key/bsp_key.h"
-//#include "GeneralTIM/bsp_GeneralTIM.h"
+//#include "Z_axis/z_axis.h"
+#include "StepMotor/bsp_StepMotor.h"
 
 /* 私有类型定义 --------------------------------------------------------------*/
 /* 私有宏定义 ----------------------------------------------------------------*/
@@ -127,13 +111,13 @@ int main(void)
   
   MX_DEBUG_USART_Init();
 
-  /* 初始化LED */
+   /* 初始化LED */
   LED_GPIO_Init();
   /* 板子按键初始化 */
   KEY_GPIO_Init();
   /* 基本定时器初始化：100us中断一次 */
-  STEPMOTOR_TIMx_Init();
-//  GENERAL_TIMx_Init();
+	
+	 STEPMOTOR_TIMx_Init();
 	/* 创建任务 */
 	AppTaskCreate();
   /* 创建任务通信机制 */
@@ -291,8 +275,13 @@ static void vTaskLED2(void *pvParameters)
     if(xResult == pdPASS)
     {
       /* 成功接收，并通过串口将数据打印出来 */
-      printf("接收到消息队列数据ucQueueMsgValue = %d\r\n", ucQueueMsgValue);
-	  STEPMOTOR_AxisMoveRel(6400*5, step_accel, step_decel, set_speed);
+        printf("接收到消息队列数据ucQueueMsgValue = %d\r\n", ucQueueMsgValue);
+		STEPMOTOR_AxisMoveRel(AXIS_X,30*SPR*CCW,step_accel,step_decel,set_speed); // X轴反向移动30圈
+		STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CW,step_accel,step_decel,set_speed);  // Y轴正向移动30圈
+		STEPMOTOR_AxisMoveRel(AXIS_Z,30*SPR*CCW,step_accel,step_decel,set_speed); // Z轴反向移动30圈
+		STEPMOTOR_AxisMoveRel(AXIS_R,30*SPR*CW,step_accel,step_decel,set_speed);  // R轴正向移动30圈
+	  //STEPMOTOR_AxisMoveRel_R(6400*5, step_accel, step_decel, set_speed);
+	 // STEPMOTOR_AxisMoveRel_Z(6400*5, step_accel, step_decel, set_speed);
     }
     else
     {
@@ -327,14 +316,14 @@ static void AppTaskCreate (void)
 
     xTaskCreate( vTaskTaskUserIF,   	/* 任务函数  */
                  "vTaskUserIF",     	/* 任务名    */
-                 512,               	/* 任务栈大小，单位word，也就是4字节 */
+                 1024,               	/* 任务栈大小，单位word，也就是4字节 */
                  NULL,              	/* 任务参数  */
                  1,                 	/* 任务优先级*/
                  &xHandleTaskUserIF );  /* 任务句柄  */
 	
     xTaskCreate( vTaskLED1,   	      /* 任务函数  */
                  "vTaskLED1",     	  /* 任务名    */
-                 512,               	/* 任务栈大小，单位word，也就是4字节 */
+                 1024,               	/* 任务栈大小，单位word，也就是4字节 */
                  NULL,              	/* 任务参数  */
                  2,                 	/* 任务优先级*/
                  &xHandleTaskLED1 );  /* 任务句柄  */

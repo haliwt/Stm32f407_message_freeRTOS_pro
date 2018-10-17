@@ -39,8 +39,9 @@
 /* USER CODE BEGIN 0 */
 #define ERR_INFO "\r\nEnter HardFault_Handler, System Halt.\r\n"
 
-extern TIM_HandleTypeDef htimx;
-extern TIM_HandleTypeDef htim2;
+
+/* USER CODE BEGIN 0 */
+#include "StepMotor/bsp_STEPMOTOR.h"
 
 /* USER CODE END 0 */
 
@@ -185,25 +186,157 @@ void RCC_IRQHandler(void)
   /* USER CODE END RCC_IRQn 1 */
 }
 
-/* USER CODE BEGIN 1 */
-#if 0
-void TIM6_DAC_IRQHandler(void)
+
+
+/**
+* @brief This function handles EXTI line[9:5] interrupt.
+*/
+
+void EXTI9_5_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM6_IRQn 0 */
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
 
-  /* USER CODE END TIM6_IRQn 0 */
-  HAL_TIM_IRQHandler(&htimx);
-  /* USER CODE BEGIN TIM6_IRQn 1 */
-
-  /* USER CODE END TIM6_IRQn 1 */
+  /* USER CODE END EXTI0_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+  
+  /* USER CODE END EXTI0_IRQn 1 */
 }
 
-void TIM2_IRQHandler(void)
+/**
+* @brief This function handles EXTI line[10:15] interrupt.
+*/
+
+void EXTI15_10_IRQHandler(void)
 {
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
   
-  //HAL_TIM_IRQHandler(&htim2);
-  
+  /* USER CODE END EXTI0_IRQn 1 */
 }
-#endif
+
+/**
+* @brief This function handles EXTI line[0] interrupt.
+*/
+
+void EXTI0_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+* @brief This function handles EXTI line[1] interrupt.
+*/
+
+void EXTI1_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+* @brief This function handles EXTI line[2] interrupt.
+*/
+
+void EXTI2_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+* @brief This function handles EXTI line[3] interrupt.
+*/
+
+void EXTI3_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+* @brief This function handles EXTI line[4] interrupt.
+*/
+
+void EXTI4_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+* @brief This function handles TIMx interrupt.
+*/
+
+void STEPMOTOR_TIMx_IRQHandler(void)
+{
+  TIM_HandleTypeDef *htim = &htimx_STEPMOTOR;
+    /* Capture compare 1 event */
+  if(__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC1) != RESET)
+  {   
+      __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC1);
+      /* Output compare event */
+      HAL_TIM_OC_Callback(AXIS_X); 
+  }
+  /* Capture compare 2 event */
+  if(__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC2) != RESET)
+  {
+      __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC2);
+      /* Output compare event */
+      HAL_TIM_OC_Callback(AXIS_Y);
+  }
+  /* Capture compare 3 event */
+  if(__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC3) != RESET)
+  {
+      __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC3);
+      /* Output compare event */
+      HAL_TIM_OC_Callback(AXIS_Z);
+  }
+  /* Capture compare 4 event */
+  if(__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC4) != RESET)
+  {
+      __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC4);
+      /* Output compare event */
+      HAL_TIM_OC_Callback(AXIS_R);
+  }
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

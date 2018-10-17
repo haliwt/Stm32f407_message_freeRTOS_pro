@@ -1,13 +1,13 @@
-#include "R_axis/r_axis.h"
+#include "Z_axis/z_axis.h" 
 #include "stepmotor_tim8/stepmotor_tim8.h"
 #include <math.h>
 /* 私有类型定义 --------------------------------------------------------------*/
 /* 私有宏定义 ----------------------------------------------------------------*/
 /* 私有变量 ------------------------------------------------------------------*/
-TIM_HandleTypeDef htimx_STEPMOTOR_R;
-speedRampData srd_R               = {STOP,CW,0,0,0,0,0};         // 加减速曲线变量
-__IO int32_t  step_position_R     = 0;           // 当前位置
-__IO uint8_t  MotionStatus_R      = 0;           //是否在运动？0：停止，1：运动
+TIM_HandleTypeDef htimx_STEPMOTOR_Z;
+speedRampData srd_z              = {STOP,CW,0,0,0,0,0};         // 加减速曲线变量
+__IO int32_t  step_position_z     = 0;           // 当前位置
+__IO uint8_t  MotionStatus_z      = 0;           //是否在运动？0：停止，1：运动
 
 /* 扩展变量 ------------------------------------------------------------------*/
 /* 私有函数原形 --------------------------------------------------------------*/
@@ -18,38 +18,38 @@ __IO uint8_t  MotionStatus_R      = 0;           //是否在运动？0：停止，1：运动
   * 返 回 值: 无
   * 说    明: 无
   */
-static void STEPMOTOR_GPIO_R_Init(void)
+static void STEPMOTOR_GPIO_Z_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct; 
   
   /* 引脚端口时钟使能 */
-  STEPMOTOR_TIM_GPIO_CLK_ENABLE_R();
-  STEPMOTOR_DIR_GPIO_CLK_ENABLE_R();
-  STEPMOTOR_ENA_GPIO_CLK_ENABLE_R();
+  STEPMOTOR_TIM_GPIO_CLK_ENABLE_Z();
+  STEPMOTOR_DIR_GPIO_CLK_ENABLE_Z();
+  STEPMOTOR_ENA_GPIO_CLK_ENABLE_Z();
   
   /* 驱动器脉冲控制引脚IO初始化 */
-  GPIO_InitStruct.Pin = STEPMOTOR_TIM_PUL_PIN_R;
+  GPIO_InitStruct.Pin = STEPMOTOR_TIM_PUL_PIN_Z;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AFx_TIMx;        // GPIO引脚用做TIM复用功能
-  HAL_GPIO_Init(STEPMOTOR_TIM_PUL_PORT_R, &GPIO_InitStruct);
+  HAL_GPIO_Init(STEPMOTOR_TIM_PUL_PORT_Z, &GPIO_InitStruct);
   
   /* 驱动器方向控制引脚IO初始化 */
-  GPIO_InitStruct.Pin = STEPMOTOR_DIR_PIN_R;
+  GPIO_InitStruct.Pin = STEPMOTOR_DIR_PIN_Z;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.Alternate = 0;                    // GPIO引脚用做系统默认功能
-  HAL_GPIO_Init(STEPMOTOR_DIR_PORT_R, &GPIO_InitStruct);
+  HAL_GPIO_Init(STEPMOTOR_DIR_PORT_Z, &GPIO_InitStruct);
   
   /* 驱动器脱机使能控制引脚IO初始化 */
-  GPIO_InitStruct.Pin = STEPMOTOR_ENA_PIN_R;
+  GPIO_InitStruct.Pin = STEPMOTOR_ENA_PIN_Z;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.Alternate = 0;                     // GPIO引脚用做系统默认功能
-  HAL_GPIO_Init(STEPMOTOR_ENA_PORT_R, &GPIO_InitStruct);
+  HAL_GPIO_Init(STEPMOTOR_ENA_PORT_Z, &GPIO_InitStruct);
   
-  STEPMOTOR_DIR_FORWARD_R();
-  STEPMOTOR_OUTPUT_DISABLE_R();
+  STEPMOTOR_DIR_FORWARD_Z();//STEPMOTOR_DIR_FORWARD_Z();
+  STEPMOTOR_OUTPUT_DISABLE_Z();
 }
 
 /**
@@ -58,7 +58,7 @@ static void STEPMOTOR_GPIO_R_Init(void)
   * 返 回 值: 无
   * 说    明: 无
   */
-void STEPMOTOR_TIMx_R_Init(void)
+void STEPMOTOR_TIMx_Z_Init(void)
 {
   TIM_ClockConfigTypeDef sClockSourceConfig;             // 定时器时钟
   TIM_OC_InitTypeDef sConfigOC;                          // 定时器通道比较输出
@@ -66,19 +66,19 @@ void STEPMOTOR_TIMx_R_Init(void)
   STEPMOTOR_TIM_RCC_CLK_ENABLE();
   
   /* STEPMOTOR相关GPIO初始化配置 */
-  STEPMOTOR_GPIO_R_Init();
+  STEPMOTOR_GPIO_Z_Init();
   
   /* 定时器基本环境配置 */
-  htimx_STEPMOTOR_R.Instance = STEPMOTOR_TIM8;                          // 定时器编号
-  htimx_STEPMOTOR_R.Init.Prescaler = STEPMOTOR_TIM_PRESCALER_R;           // 定时器预分频器
-  htimx_STEPMOTOR_R.Init.CounterMode = TIM_COUNTERMODE_UP;              // 计数方向：向上计数
-  htimx_STEPMOTOR_R.Init.Period = STEPMOTOR_TIM_PERIOD;                 // 定时器周期
-  htimx_STEPMOTOR_R.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;          // 时钟分频
-  HAL_TIM_Base_Init(&htimx_STEPMOTOR_R);
+  htimx_STEPMOTOR_Z.Instance = STEPMOTOR_TIM8;                          // 定时器编号
+  htimx_STEPMOTOR_Z.Init.Prescaler = STEPMOTOR_TIM_PRESCALER_Z;           // 定时器预分频器
+  htimx_STEPMOTOR_Z.Init.CounterMode = TIM_COUNTERMODE_UP;              // 计数方向：向上计数
+  htimx_STEPMOTOR_Z.Init.Period = STEPMOTOR_TIM_PERIOD;                 // 定时器周期
+  htimx_STEPMOTOR_Z.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;          // 时钟分频
+  HAL_TIM_Base_Init(&htimx_STEPMOTOR_Z);
 
   /* 定时器时钟源配置 */
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;       		// 使用内部时钟源
-  HAL_TIM_ConfigClockSource(&htimx_STEPMOTOR_R, &sClockSourceConfig);
+  HAL_TIM_ConfigClockSource(&htimx_STEPMOTOR_Z, &sClockSourceConfig);
 
   /* 定时器比较输出配置 */
   sConfigOC.OCMode = TIM_OCMODE_TOGGLE;                // 比较输出模式：反转输出
@@ -88,23 +88,26 @@ void STEPMOTOR_TIMx_R_Init(void)
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;           // 快速模式
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;       // 空闲电平
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;     // 互补通道空闲电平
-  HAL_TIM_OC_ConfigChannel(&htimx_STEPMOTOR_R, &sConfigOC, STEPMOTOR_TIM_CHANNEL_4);
+  HAL_TIM_OC_ConfigChannel(&htimx_STEPMOTOR_Z, &sConfigOC, STEPMOTOR_TIM_CHANNEL_3);
   /* 使能比较输出通道 */
-  TIM_CCxChannelCmd(STEPMOTOR_TIM8, STEPMOTOR_TIM_CHANNEL_4, TIM_CCx_DISABLE);
+  TIM_CCxChannelCmd(STEPMOTOR_TIM8, STEPMOTOR_TIM_CHANNEL_3, TIM_CCx_DISABLE);
   
   /* 配置定时器中断优先级并使能 */
   HAL_NVIC_SetPriority(STEPMOTOR_TIMx_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(STEPMOTOR_TIMx_IRQn);
   
-  __HAL_TIM_CLEAR_FLAG(&htimx_STEPMOTOR_R, STEPMOTOR_TIM_FLAG_CC4);
+  __HAL_TIM_CLEAR_FLAG(&htimx_STEPMOTOR_Z, STEPMOTOR_TIM_FLAG_CC3);
   /* 使能定时器比较输出 */
-  __HAL_TIM_ENABLE_IT(&htimx_STEPMOTOR_R, STEPMOTOR_TIM_IT_CC4);
+  __HAL_TIM_ENABLE_IT(&htimx_STEPMOTOR_Z, STEPMOTOR_TIM_IT_CC3);
   /* Enable the main output */
-  __HAL_TIM_MOE_ENABLE(&htimx_STEPMOTOR_R);  
-  HAL_TIM_Base_Start(&htimx_STEPMOTOR_R);// 使能定时器
+  __HAL_TIM_MOE_ENABLE(&htimx_STEPMOTOR_Z);  
+  HAL_TIM_Base_Start(&htimx_STEPMOTOR_Z);// 使能定时器
 }
 
-/******************************************************************************************
+
+
+/********************************************************************************************
+  *
   * 函数功能: 相对位置运动：运动给定的步数
   * 输入参数: step：移动的步数 (正数为顺时针，负数为逆时针).
               accel  加速度,实际值为accel*0.1*rad/sec^2
@@ -114,8 +117,9 @@ void STEPMOTOR_TIMx_R_Init(void)
   * 说    明: 以给定的步数移动步进电机，先加速到最大速度，然后在合适位置开始
   *           减速至停止，使得整个运动距离为指定的步数。如果加减速阶段很短并且
   *           速度很慢，那还没达到最大速度就要开始减速
-*********************************************************************************************/
-void STEPMOTOR_AxisMoveRel_R( int32_t step, uint32_t accel, uint32_t decel, uint32_t speed)
+  *
+**********************************************************************************************/
+void STEPMOTOR_AxisMoveRel_Z( int32_t step, uint32_t accel, uint32_t decel, uint32_t speed)
 {  
   __IO uint16_t tim_count;
   // 达到最大速度时的步数
@@ -123,25 +127,25 @@ void STEPMOTOR_AxisMoveRel_R( int32_t step, uint32_t accel, uint32_t decel, uint
   // 必须要开始减速的步数（如果加速没有达到最大速度）
   __IO uint32_t accel_lim;
 
-  if(MotionStatus_R != STOP)    // 只允许步进电机在停止的时候才继续
+  if(MotionStatus_z != STOP)    // 只允许步进电机在停止的时候才继续
     return;
   if(step < 0) // 步数为负数
   {
-    srd_R.dir = CCW; // 逆时针方向旋转
-    STEPMOTOR_DIR_REVERSAL_R();
+    srd_z.dir = CCW; // 逆时针方向旋转
+    STEPMOTOR_DIR_REVERSAL_Z();
     step =-step;   // 获取步数绝对值
   }
   else
   {
-    srd_R.dir = CW; // 顺时针方向旋转
-    STEPMOTOR_DIR_FORWARD_R();
+    srd_z.dir = CW; // 顺时针方向旋转
+    STEPMOTOR_DIR_FORWARD_Z();
   }
   
   if(step == 1)    // 步数为1
   {
-    srd_R.accel_count = -1;   // 只移动一步
-    srd_R.run_state = DECEL;  // 减速状态.
-    srd_R.step_delay = 1000;	// 短延时	
+    srd_z.accel_count = -1;   // 只移动一步
+    srd_z.run_state = DECEL;  // 减速状态.
+    srd_z.step_delay = 1000;	// 短延时	
   }
   else if(step != 0)  // 如果目标运动步数不为0
   {
@@ -149,12 +153,12 @@ void STEPMOTOR_AxisMoveRel_R( int32_t step, uint32_t accel, uint32_t decel, uint
 
     // 设置最大速度极限, 计算得到min_delay用于定时器的计数器的值。
     // min_delay = (alpha / tt)/ w
-    srd_R.min_delay = (int32_t)(A_T_x10_R/speed);
+    srd_z.min_delay = (int32_t)(A_T_x10_Z/speed);
 
     // 通过计算第一个(c0) 的步进延时来设定加速度，其中accel单位为0.1rad/sec^2
     // step_delay = 1/tt * sqrt(2*alpha/accel)
     // step_delay = ( tfreq*0.676/10 )*10 * sqrt( (2*alpha*100000) / (accel*10) )/100
-    srd_R.step_delay = (int32_t)((T1_FREQ_148_R * sqrt(A_SQ_R / accel))/10);
+    srd_z.step_delay = (int32_t)((T1_FREQ_148_Z * sqrt(A_SQ / accel))/10);
 
     // 计算多少步之后达到最大速度的限制
     // max_s_lim = speed^2 / (2*alpha*accel)
@@ -175,35 +179,35 @@ void STEPMOTOR_AxisMoveRel_R( int32_t step, uint32_t accel, uint32_t decel, uint
 
     // 使用限制条件我们可以计算出减速阶段步数
     if(accel_lim <= max_s_lim){
-      srd_R.decel_val = accel_lim - step;
+      srd_z.decel_val = accel_lim - step;
     }
     else{
-      srd_R.decel_val = -(max_s_lim*accel/decel);
+      srd_z.decel_val = -(max_s_lim*accel/decel);
     }
     // 当只剩下一步我们必须减速
-    if(srd_R.decel_val == 0){
-      srd_R.decel_val = -1;
+    if(srd_z.decel_val == 0){
+      srd_z.decel_val = -1;
     }
 
     // 计算开始减速时的步数
-    srd_R.decel_start = step + srd_R.decel_val;
+    srd_z.decel_start = step + srd_z.decel_val;
 
     // 如果最大速度很慢，我们就不需要进行加速运动
-    if(srd_R.step_delay <= srd_R.min_delay){
-      srd_R.step_delay = srd_R.min_delay;
-      srd_R.run_state = RUN;
+    if(srd_z.step_delay <= srd_z.min_delay){
+      srd_z.step_delay = srd_z.min_delay;
+      srd_z.run_state = RUN;
     }
     else{
-      srd_R.run_state = ACCEL;
+      srd_z.run_state = ACCEL;
     }    
     // 复位加速度计数值
-    srd_R.accel_count = 0;
+    srd_z.accel_count = 0;
   }
-  MotionStatus_R = 1; // 电机为运动状态
-  tim_count=__HAL_TIM_GET_COUNTER(&htimx_STEPMOTOR_R);
-  __HAL_TIM_SET_COMPARE(&htimx_STEPMOTOR_R,STEPMOTOR_TIM_CHANNEL_4,tim_count+srd_R.step_delay); // 设置定时器比较值
-  TIM_CCxChannelCmd(STEPMOTOR_TIM8, STEPMOTOR_TIM_CHANNEL_4, TIM_CCx_ENABLE);// 使能定时器通道 
-  STEPMOTOR_OUTPUT_ENABLE_R();
+  MotionStatus_z = 1; // 电机为运动状态
+  tim_count=__HAL_TIM_GET_COUNTER(&htimx_STEPMOTOR_Z);
+  __HAL_TIM_SET_COMPARE(&htimx_STEPMOTOR_Z,STEPMOTOR_TIM_CHANNEL_3,tim_count+srd_z.step_delay); // 设置定时器比较值
+  TIM_CCxChannelCmd(STEPMOTOR_TIM8, STEPMOTOR_TIM_CHANNEL_3, TIM_CCx_ENABLE);// 使能定时器通道 
+  STEPMOTOR_OUTPUT_ENABLE_Z();
 }
 
 
@@ -213,7 +217,7 @@ void STEPMOTOR_AxisMoveRel_R( int32_t step, uint32_t accel, uint32_t decel, uint
   * 返 回 值: 无
   * 说    明: 实现加减速过程
   */
-void STEPMOTOR_TIMx_R_IRQHandler(void)//定时器中断处理
+void STEPMOTOR_TIMx_Z_IRQHandler(void)//定时器中断处理
 { 
   __IO uint32_t tim_count=0;
   __IO uint32_t tmp = 0;
@@ -228,100 +232,100 @@ void STEPMOTOR_TIMx_R_IRQHandler(void)//定时器中断处理
   //定时器使用翻转模式，需要进入两次中断才输出一个完整脉冲
   __IO static uint8_t i=0;
   
-  if(__HAL_TIM_GET_IT_SOURCE(&htimx_STEPMOTOR_R, STEPMOTOR_TIM_IT_CC4) !=RESET)
+  if(__HAL_TIM_GET_IT_SOURCE(&htimx_STEPMOTOR_Z, STEPMOTOR_TIM_IT_CC3) !=RESET)
   {
     // 清楚定时器中断
-    __HAL_TIM_CLEAR_IT(&htimx_STEPMOTOR_R, STEPMOTOR_TIM_IT_CC4);
+    __HAL_TIM_CLEAR_IT(&htimx_STEPMOTOR_Z, STEPMOTOR_TIM_IT_CC3);
     
     // 设置比较值
-    tim_count=__HAL_TIM_GET_COUNTER(&htimx_STEPMOTOR_R);
-    tmp = tim_count+srd_R.step_delay;
-    __HAL_TIM_SET_COMPARE(&htimx_STEPMOTOR_R,STEPMOTOR_TIM_CHANNEL_4,tmp);
+    tim_count=__HAL_TIM_GET_COUNTER(&htimx_STEPMOTOR_Z);
+    tmp = tim_count+srd_z.step_delay;
+    __HAL_TIM_SET_COMPARE(&htimx_STEPMOTOR_Z,STEPMOTOR_TIM_CHANNEL_3,tmp);
 
     i++;     // 定时器中断次数计数值
     if(i==2) // 2次，说明已经输出一个完整脉冲
     {
       i=0;   // 清零定时器中断次数计数值
-      switch(srd_R.run_state) // 加减速曲线阶段
+      switch(srd_z.run_state) // 加减速曲线阶段
       {
         case STOP:
           step_count = 0;  // 清零步数计数器
           rest = 0;        // 清零余值
           // 关闭通道
-          TIM_CCxChannelCmd(STEPMOTOR_TIM8, STEPMOTOR_TIM_CHANNEL_4, TIM_CCx_DISABLE);        
-          __HAL_TIM_CLEAR_FLAG(&htimx_STEPMOTOR_R, STEPMOTOR_TIM_FLAG_CC4);
-          STEPMOTOR_OUTPUT_DISABLE_R();
-          MotionStatus_R = 0;  //  电机为停止状态     
+          TIM_CCxChannelCmd(STEPMOTOR_TIM8, STEPMOTOR_TIM_CHANNEL_3, TIM_CCx_DISABLE);        
+          __HAL_TIM_CLEAR_FLAG(&htimx_STEPMOTOR_Z, STEPMOTOR_TIM_FLAG_CC3);
+          STEPMOTOR_OUTPUT_DISABLE_Z();
+          MotionStatus_z = 0;  //  电机为停止状态     
           break;
 
         case ACCEL:
           step_count++;      // 步数加1
-          if(srd_R.dir==CW)
+          if(srd_z.dir==CW)
           {	  	
-            step_position_R++; // 绝对位置加1
+            step_position_z++; // 绝对位置加1
           }
           else
           {
-            step_position_R--; // 绝对位置减1
+            step_position_z--; // 绝对位置减1
           }
-          srd_R.accel_count++; // 加速计数值加1
-          new_step_delay = srd_R.step_delay - (((2 *srd_R.step_delay) + rest)/(4 * srd_R.accel_count + 1));//计算新(下)一步脉冲周期(时间间隔)
-          rest = ((2 * srd_R.step_delay)+rest)%(4 * srd_R.accel_count + 1);// 计算余数，下次计算补上余数，减少误差
-          if(step_count >= srd_R.decel_start)// 检查是够应该开始减速
+          srd_z.accel_count++; // 加速计数值加1
+          new_step_delay = srd_z.step_delay - (((2 *srd_z.step_delay) + rest)/(4 * srd_z.accel_count + 1));//计算新(下)一步脉冲周期(时间间隔)
+          rest = ((2 * srd_z.step_delay)+rest)%(4 * srd_z.accel_count + 1);// 计算余数，下次计算补上余数，减少误差
+          if(step_count >= srd_z.decel_start)// 检查是够应该开始减速
           {
-            srd_R.accel_count = srd_R.decel_val; // 加速计数值为减速阶段计数值的初始值
-            srd_R.run_state = DECEL;           // 下个脉冲进入减速阶段
+            srd_z.accel_count = srd_z.decel_val; // 加速计数值为减速阶段计数值的初始值
+            srd_z.run_state = DECEL;           // 下个脉冲进入减速阶段
           }
-          else if(new_step_delay <= srd_R.min_delay) // 检查是否到达期望的最大速度
+          else if(new_step_delay <= srd_z.min_delay) // 检查是否到达期望的最大速度
           {
             last_accel_delay = new_step_delay; // 保存加速过程中最后一次延时（脉冲周期）
-            new_step_delay = srd_R.min_delay;    // 使用min_delay（对应最大速度speed）
+            new_step_delay = srd_z.min_delay;    // 使用min_delay（对应最大速度speed）
             rest = 0;                          // 清零余值
-            srd_R.run_state = RUN;               // 设置为匀速运行状态
+            srd_z.run_state = RUN;               // 设置为匀速运行状态
           }
           break;
 
         case RUN:
           step_count++;  // 步数加1
-          if(srd_R.dir==CW)
+          if(srd_z.dir==CW)
           {	  	
-            step_position_R++; // 绝对位置加1
+            step_position_z++; // 绝对位置加1
           }
           else
           {
-            step_position_R--; // 绝对位置减1
+            step_position_z--; // 绝对位置减1
           }
-          new_step_delay = srd_R.min_delay;     // 使用min_delay（对应最大速度speed）
-          if(step_count >= srd_R.decel_start)   // 需要开始减速
+          new_step_delay = srd_z.min_delay;     // 使用min_delay（对应最大速度speed）
+          if(step_count >= srd_z.decel_start)   // 需要开始减速
           {
-            srd_R.accel_count = srd_R.decel_val;  // 减速步数做为加速计数值
+            srd_z.accel_count = srd_z.decel_val;  // 减速步数做为加速计数值
             new_step_delay = last_accel_delay;// 加阶段最后的延时做为减速阶段的起始延时(脉冲周期)
-            srd_R.run_state = DECEL;            // 状态改变为减速
+            srd_z.run_state = DECEL;            // 状态改变为减速
           }
           break;
 
         case DECEL:
           step_count++;  // 步数加1
-          if(srd_R.dir==CW)
+          if(srd_z.dir==CW)
           {	  	
-            step_position_R++; // 绝对位置加1
+            step_position_z++; // 绝对位置加1
           }
           else
           {
-            step_position_R--; // 绝对位置减1
+            step_position_z--; // 绝对位置减1
           }
-          srd_R.accel_count++;
-          new_step_delay = srd_R.step_delay - (((2 * srd_R.step_delay) + rest)/(4 * srd_R.accel_count + 1)); //计算新(下)一步脉冲周期(时间间隔)
-          rest = ((2 * srd_R.step_delay)+rest)%(4 * srd_R.accel_count + 1);// 计算余数，下次计算补上余数，减少误差
+          srd_z.accel_count++;
+          new_step_delay = srd_z.step_delay - (((2 * srd_z.step_delay) + rest)/(4 * srd_z.accel_count + 1)); //计算新(下)一步脉冲周期(时间间隔)
+          rest = ((2 * srd_z.step_delay)+rest)%(4 * srd_z.accel_count + 1);// 计算余数，下次计算补上余数，减少误差
           
           //检查是否为最后一步
-          if(srd_R.accel_count >= 0)
+          if(srd_z.accel_count >= 0)
           {
-            srd_R.run_state = STOP;
+            srd_z.run_state = STOP;
           }
           break;
       }      
-      srd_R.step_delay = new_step_delay; // 为下个(新的)延时(脉冲周期)赋值
+      srd_z.step_delay = new_step_delay; // 为下个(新的)延时(脉冲周期)赋值
     }
   }
 }
