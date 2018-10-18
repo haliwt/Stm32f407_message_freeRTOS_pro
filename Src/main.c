@@ -36,8 +36,10 @@ __IO uint32_t step_decel = 100;         // 减速度 单位为0.05rad/sec^2
 typedef struct Msg
 {
 	uint8_t  ucMessageID;
-	uint8_t usData[8];
-	uint8_t ulData[8];
+	uint8_t uXData[8];
+	uint8_t uYData[8];
+	uint8_t uZData[8];
+	uint8_t uRData[8];
 }MSG_T;
 
 MSG_T  g_tMsg; /* 定义一个结构体用于消息队列 */
@@ -138,27 +140,27 @@ int main(void)
   }
 }
 
-/**
+/********************************************************************
+  *
   * 函数功能: 接口消息处理
   * 输入参数: 无
   * 返 回 值: 无
   * 说    明: 无
-  */
-//static uint32_t g_uiCount = 0; /* 设置为全局静态变量，方便数据更新 */
-
+  *
+*********************************************************************/
 static void vTaskTaskUserIF(void *pvParameters)
 {
-    
-  MSG_T   *ptMsg;
-  uint8_t ucCount = 0;
+    MSG_T   *ptMsg;
   uint8_t pcWriteBuffer[500];
   	/* 初始化结构体指针 */
 	ptMsg = &g_tMsg;
 	
 	/* 初始化数组 */
 	ptMsg->ucMessageID = 0;
-	ptMsg->ulData[0] = 0;
-	ptMsg->usData[0] = 0;
+	ptMsg->uXData[0] = 0;
+	ptMsg->uYData[0] = 0;
+	ptMsg->uZData[0] = 0;
+	ptMsg->uRData[0] = 0;
   
     /* 创建按键 */
   KeyCreate(&key1,GetPinStateOfKey1);
@@ -196,87 +198,87 @@ static void vTaskTaskUserIF(void *pvParameters)
         printf("%s\r\n", pcWriteBuffer);        
         Key_AccessTimes(&key1,KEY_ACCESS_WRITE_CLEAR);
       }
-      
+      //X轴
       if(aRxBuffer[0]==0xa1)//if(Key_AccessTimes(&key2,KEY_ACCESS_READ)!=0)//按键被按下过
       { 
-        ucCount++;
-        /* 向消息队列发数据，如果消息队列满了，等待10个时钟节拍 */
-        if( xQueueSend(xQueue1,
-                 (void *) &ucCount,
-                 (TickType_t)10) != pdPASS )
+        aRxBuffer[0]=0;
+		ptMsg->ucMessageID++;
+		#if 1
+        ptMsg->uXData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
+        ptMsg->uXData[1]=aRxBuffer[1];//0x10;//ptMsg->usData[0]++;
+		ptMsg->uXData[2]=aRxBuffer[2];//0x02;//ptMsg->ulData[0]++;;
+        ptMsg->uXData[3]=aRxBuffer[3];//0x20;//ptMsg->usData[0]++;
+		ptMsg->uXData[4]=aRxBuffer[4];//0x03;//ptMsg->ulData[0]++;;
+        ptMsg->uXData[5]=aRxBuffer[5];//0x30;//ptMsg->usData[0]++;
+		ptMsg->uXData[6]=aRxBuffer[6];//0x04;//ptMsg->ulData[0]++;;
+        ptMsg->uXData[7]=aRxBuffer[7];//0x40;//ptMsg->usData[0]++;
+		
+		#endif
+        /* 使用消息队列实现指针变量的传递 */
+        if(xQueueSend(xQueue1,                  /* 消息队列句柄 */
+               (void *) &ptMsg,           /* 发送结构体指针变量ptMsg的地址 */
+               (TickType_t)10) != pdPASS )
         {
           /* 发送失败，即使等待了10个时钟节拍 */
-          printf("KEY2按下，向xQueue1发送数据失败，即使等待了10个时钟节拍\r\n");
+          LED1_TOGGLE;//printf("KEY3按下，向xQueue2发送数据失败，即使等待了10个时钟节拍\r\n");
         }
-        else
+		else
         {
           /* 发送成功 */
-          printf("KEY2按下，向xQueue1发送数据成功\r\n");						
-        }        
-        Key_AccessTimes(&key2,KEY_ACCESS_WRITE_CLEAR);
+          LED1_ON; //printf("KEY3按下，向xQueue2发送数据成功\r\n");						
+        } 
+
+      		
+        Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
       }  
-      
+      //Y轴
       if(aRxBuffer[0]==0xa2)//if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//按键被按下过
       { 
         aRxBuffer[0]=0;
 		ptMsg->ucMessageID++;
 		#if 1
-        ptMsg->ulData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
-        ptMsg->usData[0]=aRxBuffer[0];//0x10;//ptMsg->usData[0]++;
-		ptMsg->ulData[1]=aRxBuffer[1];//0x02;//ptMsg->ulData[0]++;;
-        ptMsg->usData[1]=aRxBuffer[1];//0x20;//ptMsg->usData[0]++;
-		ptMsg->ulData[2]=aRxBuffer[2];//0x03;//ptMsg->ulData[0]++;;
-        ptMsg->usData[2]=aRxBuffer[2];//0x30;//ptMsg->usData[0]++;
-		ptMsg->ulData[3]=aRxBuffer[3];//0x04;//ptMsg->ulData[0]++;;
-        ptMsg->usData[3]=aRxBuffer[3];//0x40;//ptMsg->usData[0]++;
-		ptMsg->ulData[4]=aRxBuffer[4];//0x05;//ptMsg->ulData[0]++;;
-        ptMsg->usData[4]=aRxBuffer[4];//0x50;//ptMsg->usData[0]++;
-		ptMsg->ulData[5]=aRxBuffer[5];//0x06;//ptMsg->ulData[0]++;;
-        ptMsg->usData[5]=aRxBuffer[5];//0x60;//ptMsg->usData[0]++;
-		ptMsg->ulData[6]=aRxBuffer[6];//0x07;//ptMsg->ulData[0]++;;
-        ptMsg->usData[6]=aRxBuffer[6];//0x70;//ptMsg->usData[0]++;
-		ptMsg->ulData[7]=aRxBuffer[7];//0x8a;//ptMsg->ulData[0]++;;
-        ptMsg->usData[7]=aRxBuffer[7];//0xa8;//ptMsg->usData[0]++;
+        ptMsg->uYData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
+        ptMsg->uYData[1]=aRxBuffer[1];//0x10;//ptMsg->usData[0]++;
+		ptMsg->uYData[2]=aRxBuffer[2];//0x02;//ptMsg->ulData[0]++;;
+        ptMsg->uYData[3]=aRxBuffer[3];//0x20;//ptMsg->usData[0]++;
+		ptMsg->uYData[4]=aRxBuffer[4];//0x03;//ptMsg->ulData[0]++;;
+        ptMsg->uYData[5]=aRxBuffer[5];//0x30;//ptMsg->usData[0]++;
+		ptMsg->uYData[6]=aRxBuffer[6];//0x04;//ptMsg->ulData[0]++;;
+        ptMsg->uYData[7]=aRxBuffer[7];//0x40;//ptMsg->usData[0]++;
+		
 		#endif
         /* 使用消息队列实现指针变量的传递 */
         if(xQueueSend(xQueue2,                  /* 消息队列句柄 */
                (void *) &ptMsg,           /* 发送结构体指针变量ptMsg的地址 */
-               (TickType_t)20) != pdPASS )
+               (TickType_t)10) != pdPASS )
         {
           /* 发送失败，即使等待了10个时钟节拍 */
-          printf("KEY3按下，向xQueue1发送数据失败，即使等待了10个时钟节拍\r\n");
+          LED2_TOGGLE;//printf("KEY3按下，向xQueue2发送数据失败，即使等待了10个时钟节拍\r\n");
         }
 		else
         {
           /* 发送成功 */
-          printf("KEY3按下，向xQueue2发送数据成功\r\n");						
+          LED2_ON; //printf("KEY3按下，向xQueue2发送数据成功\r\n");						
         } 
 
       		
         Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
       }
-	  
+	  //Z轴
       if(aRxBuffer[0]==0xa3)//if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//按键被按下过
       { 
         aRxBuffer[0]=0;
 		ptMsg->ucMessageID++;
 		#if 1
-        ptMsg->ulData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
-        ptMsg->usData[0]=aRxBuffer[0];//0x10;//ptMsg->usData[0]++;
-		ptMsg->ulData[1]=aRxBuffer[1];//0x02;//ptMsg->ulData[0]++;;
-        ptMsg->usData[1]=aRxBuffer[1];//0x20;//ptMsg->usData[0]++;
-		ptMsg->ulData[2]=aRxBuffer[2];//0x03;//ptMsg->ulData[0]++;;
-        ptMsg->usData[2]=aRxBuffer[2];//0x30;//ptMsg->usData[0]++;
-		ptMsg->ulData[3]=aRxBuffer[3];//0x04;//ptMsg->ulData[0]++;;
-        ptMsg->usData[3]=aRxBuffer[3];//0x40;//ptMsg->usData[0]++;
-		ptMsg->ulData[4]=aRxBuffer[4];//0x05;//ptMsg->ulData[0]++;;
-        ptMsg->usData[4]=aRxBuffer[4];//0x50;//ptMsg->usData[0]++;
-		ptMsg->ulData[5]=aRxBuffer[5];//0x06;//ptMsg->ulData[0]++;;
-        ptMsg->usData[5]=aRxBuffer[5];//0x60;//ptMsg->usData[0]++;
-		ptMsg->ulData[6]=aRxBuffer[6];//0x07;//ptMsg->ulData[0]++;;
-        ptMsg->usData[6]=aRxBuffer[6];//0x70;//ptMsg->usData[0]++;
-		ptMsg->ulData[7]=aRxBuffer[7];//0x8a;//ptMsg->ulData[0]++;;
-        ptMsg->usData[7]=aRxBuffer[7];//0xa8;//ptMsg->usData[0]++;
+        ptMsg->uZData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
+        ptMsg->uZData[1]=aRxBuffer[1];//0x10;//ptMsg->usData[0]++;
+		ptMsg->uZData[2]=aRxBuffer[2];//0x02;//ptMsg->ulData[0]++;;
+        ptMsg->uZData[3]=aRxBuffer[3];//0x20;//ptMsg->usData[0]++;
+		ptMsg->uZData[4]=aRxBuffer[4];//0x03;//ptMsg->ulData[0]++;;
+        ptMsg->uZData[5]=aRxBuffer[5];//0x30;//ptMsg->usData[0]++;
+		ptMsg->uZData[6]=aRxBuffer[6];//0x04;//ptMsg->ulData[0]++;;
+        ptMsg->uZData[7]=aRxBuffer[7];//0x40;//ptMsg->usData[0]++;
+		
 		#endif
         /* 使用消息队列实现指针变量的传递 */
         if(xQueueSend(xQueue3,                  /* 消息队列句柄 */
@@ -284,12 +286,12 @@ static void vTaskTaskUserIF(void *pvParameters)
                (TickType_t)20) != pdPASS )
         {
           /* 发送失败，即使等待了10个时钟节拍 */
-          printf("KEY3按下，向xQueue3发送数据失败，即使等待了10个时钟节拍\r\n");
+          LED3_TOGGLE; // printf("KEY3按下，向xQueue3发送数据失败，即使等待了10个时钟节拍\r\n");
         }
 		else
         {
           /* 发送成功 */
-          printf("KEY3按下，向xQueue3发送数据成功\r\n");						
+          LED3_ON;//printf("KEY3按下，向xQueue3发送数据成功\r\n");						
         } 
 
       		
@@ -302,22 +304,15 @@ static void vTaskTaskUserIF(void *pvParameters)
         aRxBuffer[0]=0;
 		ptMsg->ucMessageID++;
 		#if 1
-        ptMsg->ulData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
-        ptMsg->usData[0]=aRxBuffer[0];//0x10;//ptMsg->usData[0]++;
-		ptMsg->ulData[1]=aRxBuffer[1];//0x02;//ptMsg->ulData[0]++;;
-        ptMsg->usData[1]=aRxBuffer[1];//0x20;//ptMsg->usData[0]++;
-		ptMsg->ulData[2]=aRxBuffer[2];//0x03;//ptMsg->ulData[0]++;;
-        ptMsg->usData[2]=aRxBuffer[2];//0x30;//ptMsg->usData[0]++;
-		ptMsg->ulData[3]=aRxBuffer[3];//0x04;//ptMsg->ulData[0]++;;
-        ptMsg->usData[3]=aRxBuffer[3];//0x40;//ptMsg->usData[0]++;
-		ptMsg->ulData[4]=aRxBuffer[4];//0x05;//ptMsg->ulData[0]++;;
-        ptMsg->usData[4]=aRxBuffer[4];//0x50;//ptMsg->usData[0]++;
-		ptMsg->ulData[5]=aRxBuffer[5];//0x06;//ptMsg->ulData[0]++;;
-        ptMsg->usData[5]=aRxBuffer[5];//0x60;//ptMsg->usData[0]++;
-		ptMsg->ulData[6]=aRxBuffer[6];//0x07;//ptMsg->ulData[0]++;;
-        ptMsg->usData[6]=aRxBuffer[6];//0x70;//ptMsg->usData[0]++;
-		ptMsg->ulData[7]=aRxBuffer[7];//0x8a;//ptMsg->ulData[0]++;;
-        ptMsg->usData[7]=aRxBuffer[7];//0xa8;//ptMsg->usData[0]++;
+        ptMsg->uRData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
+        ptMsg->uRData[1]=aRxBuffer[1];//0x10;//ptMsg->usData[0]++;
+		ptMsg->uRData[2]=aRxBuffer[2];//0x02;//ptMsg->ulData[0]++;;
+        ptMsg->uRData[3]=aRxBuffer[3];//0x20;//ptMsg->usData[0]++;
+		ptMsg->uRData[4]=aRxBuffer[4];//0x03;//ptMsg->ulData[0]++;;
+        ptMsg->uRData[5]=aRxBuffer[5];//0x30;//ptMsg->usData[0]++;
+		ptMsg->uRData[6]=aRxBuffer[6];//0x04;//ptMsg->ulData[0]++;;
+        ptMsg->uRData[7]=aRxBuffer[7];//0x40;//ptMsg->usData[0]++;
+		
 		#endif
         /* 使用消息队列实现指针变量的传递 */
         if(xQueueSend(xQueue4,                  /* 消息队列句柄 */
@@ -325,12 +320,12 @@ static void vTaskTaskUserIF(void *pvParameters)
                (TickType_t)20) != pdPASS )
         {
           /* 发送失败，即使等待了10个时钟节拍 */
-          printf("KEY3按下，向xQueue4发送数据失败，即使等待了10个时钟节拍\r\n");
+         LED4_TOGGLE; //printf("KEY3按下，向xQueue4发送数据失败，即使等待了10个时钟节拍\r\n");
         }
 		else
         {
           /* 发送成功 */
-          LED4_TOGGLE;//printf("KEY3按下，向xQueue3发送数据成功\r\n");						
+          LED4_ON;//printf("KEY3按下，向xQueue3发送数据成功\r\n");						
         } 
 
       		
@@ -341,47 +336,52 @@ static void vTaskTaskUserIF(void *pvParameters)
 		
 }
 
-/************************************************************
+/***********************************************************************************
   *
-  * 函数功能: LED1任务
+  * 函数功能: X轴任务
   * 输入参数: 无
   * 返 回 值: 无
   * 说    明: 无
   *
-*************************************************************/
+***************************************************************************************/
 static void vTaskX_axis(void *pvParameters)
 {
-  BaseType_t xResult;
-  const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 设置最大等待时间为300ms */
-  uint8_t ucQueueMsgValue;
+    MSG_T *ptMsg;
+	BaseType_t xResult;
+	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 设置最大等待时间为200ms */
 	
 
   while(1)
   {
-    xResult = xQueueReceive(xQueue1,                   /* 消息队列句柄 */
-                            (void *)&ucQueueMsgValue,  		   /* 这里获取的是结构体的地址 */
-                            (TickType_t)xMaxBlockTime);/* 设置阻塞时间 */
-
-
-    if(xResult == pdPASS)
-    {
-      /* 成功接收，并通过串口将数据打印出来 */
-		printf("X_axis:ucQueueMsgValue = %#x\r\n", ucQueueMsgValue);
-	 // STEPMOTOR_DisMoveAbs(AXIS_X,400,step_accel,step_decel,set_speed);//X轴移动到400mm的位置 局对距离
-	   STEPMOTOR_AxisMoveRel(AXIS_X,30*SPR*CCW,step_accel,step_decel,set_speed); // Z轴反向移动30圈，相对距离
-	  
-    }
-    else
-    {
-      LED1_TOGGLE;
-
-    }
+   xResult = xQueueReceive(xQueue1,                   /* 消息队列句柄 */
+		                        (void *)&ptMsg,  		   /* 这里获取的是结构体的地址 */
+		                        (TickType_t)xMaxBlockTime);/* 设置阻塞时间 */
+	
+		
+		if(xResult == pdPASS)
+		{
+			/* 成功接收，并通过串口将数据打印出来 */
+			printf("X_axis= %#x\r\n", ptMsg->ucMessageID);
+			printf("X_axis[0]= %#x\r\n", ptMsg->uXData[0]);
+			printf("X_axis[1]= %#x\r\n", ptMsg->uXData[1]);
+			printf("X_axis[2]= %#x\r\n", ptMsg->uXData[2]);
+			printf("X_axis[3]= %#x\r\n", ptMsg->uXData[3]);
+			printf("X_axis[4]= %#x\r\n", ptMsg->uXData[4]);
+			printf("X_axis[5]= %#x\r\n", ptMsg->uXData[5]);
+			printf("X_axis[6]= %#x\r\n", ptMsg->uXData[6]);
+			printf("X_axis[7]= %#x\r\n", ptMsg->uXData[7]);
+			STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // X轴反向移动30圈
+		}
+		else
+		{
+			LED1_TOGGLE;    
+		}
   }
 }
 
 /***********************************************************
   *
-  * 函数功能: LED2任务
+  * 函数功能: Y轴任务
   * 输入参数: 无
   * 返 回 值: 无
   * 说    明: 无
@@ -405,24 +405,16 @@ static void vTaskY_axis(void *pvParameters)
 		if(xResult == pdPASS)
 		{
 			/* 成功接收，并通过串口将数据打印出来 */
-			printf("Y_axis:->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
-			printf("接收到消息队列数据ptMsg->ulData[0] = %#x\r\n", ptMsg->ulData[0]);
-			printf("接收到消息队列数据ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
-			printf("接收到消息队列数据ptMsg->ulData[1] = %#x\r\n", ptMsg->ulData[1]);
-			printf("接收到消息队列数据ptMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
-			printf("接收到消息队列数据ptMsg->ulData[2] = %#x\r\n", ptMsg->ulData[2]);
-			printf("接收到消息队列数据ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
-			printf("接收到消息队列数据ptMsg->ulData[3] = %#x\r\n", ptMsg->ulData[3]);
-			printf("接收到消息队列数据ptMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
-			printf("接收到消息队列数据ptMsg->ulData[4] = %#x\r\n", ptMsg->ulData[4]);
-			printf("接收到消息队列数据ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
-			printf("接收到消息队列数据ptMsg->ulData[5] = %#x\r\n", ptMsg->ulData[5]);
-			printf("接收到消息队列数据ptMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
-			printf("接收到消息队列数据ptMsg->ulData[6] = %#x\r\n", ptMsg->ulData[6]);
-			printf("接收到消息队列数据ptMsg->usData[6] = %#x\r\n", ptMsg->usData[6]);
-			printf("接收到消息队列数据ptMsg->ulData[7] = %#x\r\n", ptMsg->ulData[7]);
-			printf("接收到消息队列数据ptMsg->usData[7] = %#x\r\n", ptMsg->usData[7]);
-			  STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // X轴反向移动30圈
+			printf("Y_axis= %#x\r\n", ptMsg->ucMessageID);
+			printf("Y_axis[0]= %#x\r\n", ptMsg->uYData[0]);
+			printf("Y_axis[1]= %#x\r\n", ptMsg->uYData[1]);
+			printf("Y_axis[2]= %#x\r\n", ptMsg->uYData[2]);
+			printf("Y_axis[3]= %#x\r\n", ptMsg->uYData[3]);
+			printf("Y_axis[4]= %#x\r\n", ptMsg->uYData[4]);
+			printf("Y_axis[5]= %#x\r\n", ptMsg->uYData[5]);
+			printf("Y_axis[6]= %#x\r\n", ptMsg->uYData[6]);
+			printf("Y_axis[7]= %#x\r\n", ptMsg->uYData[7]);
+			STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // X轴反向移动30圈
 		}
 		else
 		{
@@ -458,23 +450,16 @@ static void vTaskZ_axis(void *pvParameters)
     {
       /* 成功接收，并通过串口将数据打印出来 */
 	    /* 成功接收，并通过串口将数据打印出来 */
-			printf("Z_axis:->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
-			printf("Z_axis:輕tMsg->ulData[0] = %#x\r\n", ptMsg->ulData[0]);
-			printf("Z_axis:ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
-			printf("Z_axis:ptMsg->ulData[1] = %#x\r\n", ptMsg->ulData[1]);
-			printf("Z_axis:ptMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
-			printf("Z_axis:ptMsg->ulData[2] = %#x\r\n", ptMsg->ulData[2]);
-			printf("Z_axis:ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
-			printf("Z_axis:ptMsg->ulData[3] = %#x\r\n", ptMsg->ulData[3]);
-			printf("Z_axis:ptMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
-			printf("Z_axis:ptMsg->ulData[4] = %#x\r\n", ptMsg->ulData[4]);
-			printf("Z_axis:ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
-			printf("Z_axis:ptMsg->ulData[5] = %#x\r\n", ptMsg->ulData[5]);
-			printf("Z_axis:ptMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
-			printf("Z_axis:ptMsg->ulData[6] = %#x\r\n", ptMsg->ulData[6]);
-			printf("Z_axis:ptMsg->usData[6] = %#x\r\n", ptMsg->usData[6]);
-			printf("Z_axis:ptMsg->ulData[7] = %#x\r\n", ptMsg->ulData[7]);
-			printf("Z_axis:ptMsg->usData[7] = %#x\r\n", ptMsg->usData[7]);
+		    printf("Z_axis :ucMessageID = %#x\r\n", ptMsg->ucMessageID);
+			printf("Z_axis[0] = %#x\r\n", ptMsg->uZData[0]);
+			printf("Z_axis[1] = %#x\r\n", ptMsg->uZData[1]);
+			printf("Z_axis[2] = %#x\r\n", ptMsg->uZData[2]);
+			printf("Z_axis[3] = %#x\r\n", ptMsg->uZData[3]);
+			printf("Z_axis[4] = %#x\r\n", ptMsg->uZData[4]);
+			printf("Z_axis[5] = %#x\r\n", ptMsg->uZData[5]);
+			printf("Z_axis[6] = %#x\r\n", ptMsg->uZData[6]);
+			printf("Z_axis[7] = %#x\r\n", ptMsg->uZData[7]);
+			
 	  //STEPMOTOR_DisMoveAbs(AXIS_Z,400,step_accel,step_decel,set_speed);//X轴移动到400mm的位置
 	   STEPMOTOR_AxisMoveRel(AXIS_Z,30*SPR*CCW,step_accel,step_decel,set_speed); // Z轴反向移动30圈
 	}
@@ -496,7 +481,7 @@ static void vTaskZ_axis(void *pvParameters)
 ***************************************************/
 static void vTaskR_axis(void *pvParameters)
 {
-    int R_axis=0;
+   
 	while(1)
     {
        MSG_T *ptMsg;
@@ -512,32 +497,19 @@ static void vTaskR_axis(void *pvParameters)
 		if(xResult == pdPASS)
 		{
 		  /* 成功接收，并通过串口将数据打印出来 */
-			R_axis=1;
+			
 			printf("R_axis:->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
-			printf("R_axis:輕tMsg->ulData[0] = %#x\r\n", ptMsg->ulData[0]);
-			printf("R_axis:ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
-			printf("R_axis:ptMsg->ulData[1] = %#x\r\n", ptMsg->ulData[1]);
-			printf("R_axis:ptMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
-			printf("R_axis:ptMsg->ulData[2] = %#x\r\n", ptMsg->ulData[2]);
-			printf("R_axis:ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
-			printf("R_axis:ptMsg->ulData[3] = %#x\r\n", ptMsg->ulData[3]);
-			printf("R_axis:ptMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
-			printf("R_axis:ptMsg->ulData[4] = %#x\r\n", ptMsg->ulData[4]);
-			printf("R_axis:ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
-			printf("R_axis:ptMsg->ulData[5] = %#x\r\n", ptMsg->ulData[5]);
-			printf("R_axis:ptMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
-			printf("Z_axis:ptMsg->ulData[6] = %#x\r\n", ptMsg->ulData[6]);
-			printf("Z_axis:ptMsg->usData[6] = %#x\r\n", ptMsg->usData[6]);
-			printf("Z_axis:ptMsg->ulData[7] = %#x\r\n", ptMsg->ulData[7]);
-			printf("Z_axis:ptMsg->usData[7] = %#x\r\n", ptMsg->usData[7]);
-			 
-	    }
-		if(R_axis==1)
-		{
-		   R_axis=0;
+			printf("R_axis[0] = %#x\r\n", ptMsg->uRData[0]);
+			printf("R_axis[1] = %#x\r\n", ptMsg->uRData[1]);
+			printf("R_axis[2] = %#x\r\n", ptMsg->uRData[2]);
+			printf("R_axis[3] = %#x\r\n", ptMsg->uRData[3]);
+			printf("R_axis[4] = %#x\r\n", ptMsg->uRData[4]);
+			printf("R_axis[5] = %#x\r\n", ptMsg->uRData[5]);
+			printf("R_axis[6] = %#x\r\n", ptMsg->uRData[6]);
+			printf("R_axis[7] = %#x\r\n", ptMsg->uRData[7]);
 			STEPMOTOR_AxisMoveRel(AXIS_R,30*SPR*CW,step_accel,step_decel,set_speed);  // R轴正向移动30圈
-		
 		}
+		
 		else
 		{
 		  LED4_TOGGLE;
@@ -606,7 +578,7 @@ static void AppTaskCreate (void)
 static void AppObjCreate (void)
 {
 	/* 创建10个uint8_t型消息队列 */
-	xQueue1 = xQueueCreate(5, sizeof(uint8_t));
+	xQueue1 = xQueueCreate(8, sizeof(struct Msg *));
     if( xQueue1 == 0 )
     {
         /* 没有创建成功，用户可以在这里加入创建失败的处理机制 */
@@ -614,20 +586,20 @@ static void AppObjCreate (void)
     }
 	
 	/* 创建10个存储指针变量的消息队列，由于CM3/CM4内核是32位机，一个指针变量占用4个字节 */
-	xQueue2 = xQueueCreate(5, sizeof(struct Msg *));
+	xQueue2 = xQueueCreate(8, sizeof(struct Msg *));
     if( xQueue2 == 0 )
     {
         /* 没有创建成功，用户可以在这里加入创建失败的处理机制 */
 		printf("xQueue2 don't set up ERROR !\n");
     }
 	/* 创建10个存储指针变量的消息队列，由于CM3/CM4内核是32位机，一个指针变量占用4个字节 */
-	xQueue3 = xQueueCreate(5, sizeof(struct Msg *));
+	xQueue3 = xQueueCreate(8, sizeof(struct Msg *));
     if( xQueue3 == 0 )
     {
         /* 没有创建成功，用户可以在这里加入创建失败的处理机制 */
 		printf("xQueue3 don't set up ERROR !\n");
     }
-	xQueue4 = xQueueCreate(5, sizeof(struct Msg *));
+	xQueue4 = xQueueCreate(8, sizeof(struct Msg *));
     if( xQueue4 == 0 )
     {
         printf("xQueue4 don't set up ERROR !\n");
