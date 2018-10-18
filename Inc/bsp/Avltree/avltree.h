@@ -1,6 +1,6 @@
 #ifndef _AVLTREE_H_
 #define _AVLTREE_H_
-
+#define LENGTH(a) ((sizeof(a))/(sizeof(a[0])))
 #define MAX(a, b)	(a > b ? a : b)
 #define GET_HEIGHT(T)	(T == NULL ? -1 : T->height)
 

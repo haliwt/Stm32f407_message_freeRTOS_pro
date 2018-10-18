@@ -214,7 +214,7 @@ void levelOrder(AVLtree *T)
 	QUEUE *q = createQueue(100);
 
 	while(T != NULL) {
-		printf("%d ", T->element);
+		printf("%#x ", T->element);
 		if(T->lchild != NULL)
 			enQueue(T->lchild, q);
 		if(T->rchild != NULL)
@@ -239,7 +239,7 @@ void levelOrder(AVLtree *T)
 void preOrder(AVLtree *T)
 {
 	if(T != NULL) {
-		printf("%d ", T->element);
+		printf("%#x ", T->element);
 		preOrder(T->lchild);
 		preOrder(T->rchild);
 	}
@@ -256,7 +256,7 @@ void inOrder(AVLtree *T)
 {
 	if(T != NULL) {
 		inOrder(T->lchild);
-		printf("%d ", T->element);
+		printf("%#x ", T->element);
 		inOrder(T->rchild);
 	}
 }
@@ -308,10 +308,12 @@ void printf_avltree(AVLtree *tree,myType key,int direction)
    if(tree !=NULL)
    {
        if(direction == 0) //tree 是根结点
-           printf("%2d is root，%d \n",tree ->element,key);
-       else // tree 是分支节点
-           printf("%2d is %2d's %6s child\n",tree->element,key,direction==1?"right":"left");
-           printf_avltree(tree->lchild,tree->element,-1);
+           //printf("%2d is root，%d \n",tree ->element,key);
+           printf("%#x is root，%#x \n",tree ->element,key);
+	   else // tree 是分支节点
+           //printf("%2d is %2d's %6s child\n",tree->element,key,direction==1?"right":"left");
+           printf("%#x is %#x's %6s child\n",tree->element,key,direction==1?"right":"left");
+	       printf_avltree(tree->lchild,tree->element,-1);
            printf_avltree(tree->rchild,tree->element,1);
    }
 

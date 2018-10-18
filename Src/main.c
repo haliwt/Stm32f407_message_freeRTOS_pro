@@ -6,6 +6,7 @@
 #include "key/bsp_key.h"
 //#include "Z_axis/z_axis.h"
 #include "StepMotor/bsp_StepMotor.h"
+#include "avltree/avltree.h"
 
 /* 私有类型定义 --------------------------------------------------------------*/
 /* 私有宏定义 ----------------------------------------------------------------*/
@@ -25,7 +26,13 @@ extern int X_axis;
 extern int Y_axis;
 extern int Z_axis;
 extern int R_axis;
-uint8_t aRxBuffer[8];
+
+AVLtree *Xtree = NULL;
+AVLtree *Ytree = NULL;
+AVLtree *Ztree = NULL;
+AVLtree *Rtree = NULL;
+	
+uint8_t aRxBuffer[9];
 // 速度最大值由驱动器和电机决定，有些最大是1800，有些可以达到4000
 __IO uint32_t set_speed  = 3000;         // 速度 单位为0.05rad/sec
 // 加速度和减速度选取一般根据实际需要，值越大速度变化越快，加减速阶段比较抖动
@@ -150,8 +157,12 @@ int main(void)
 *********************************************************************/
 static void vTaskTaskUserIF(void *pvParameters)
 {
-    MSG_T   *ptMsg;
-  uint8_t pcWriteBuffer[500];
+      uint8_t i;
+	 
+	  uint8_t xlength,ylength;
+	 
+	MSG_T   *ptMsg;
+    uint8_t pcWriteBuffer[500];
   	/* 初始化结构体指针 */
 	ptMsg = &g_tMsg;
 	
@@ -173,9 +184,9 @@ static void vTaskTaskUserIF(void *pvParameters)
       Key_RefreshState(&key1);//刷新按键状态
       Key_RefreshState(&key2);//刷新按键状态
       Key_RefreshState(&key3);//刷新按键状态
-		
+	 
 	
-      HAL_UART_Receive(&husart_debug,aRxBuffer,8,0xffff);
+      HAL_UART_Receive(&husart_debug,aRxBuffer,9,0xffff);
 	#if 0
 	   printf("aRxBuffer[0]=%#x \n",aRxBuffer[0]);
 	   printf("aRxBuffer[1]=%#x \n",aRxBuffer[1]);
@@ -204,15 +215,19 @@ static void vTaskTaskUserIF(void *pvParameters)
         aRxBuffer[0]=0;
 		ptMsg->ucMessageID++;
 		#if 1
-        ptMsg->uXData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
-        ptMsg->uXData[1]=aRxBuffer[1];//0x10;//ptMsg->usData[0]++;
-		ptMsg->uXData[2]=aRxBuffer[2];//0x02;//ptMsg->ulData[0]++;;
-        ptMsg->uXData[3]=aRxBuffer[3];//0x20;//ptMsg->usData[0]++;
-		ptMsg->uXData[4]=aRxBuffer[4];//0x03;//ptMsg->ulData[0]++;;
-        ptMsg->uXData[5]=aRxBuffer[5];//0x30;//ptMsg->usData[0]++;
-		ptMsg->uXData[6]=aRxBuffer[6];//0x04;//ptMsg->ulData[0]++;;
-        ptMsg->uXData[7]=aRxBuffer[7];//0x40;//ptMsg->usData[0]++;
-		
+        ptMsg->uXData[0]=aRxBuffer[1];//0x01;//ptMsg->ulData[0]++;;
+        ptMsg->uXData[1]=aRxBuffer[2];//0x10;//ptMsg->usData[0]++;
+		ptMsg->uXData[2]=aRxBuffer[3];//0x02;//ptMsg->ulData[0]++;;
+        ptMsg->uXData[3]=aRxBuffer[4];//0x20;//ptMsg->usData[0]++;
+		ptMsg->uXData[4]=aRxBuffer[5];//0x03;//ptMsg->ulData[0]++;;
+        ptMsg->uXData[5]=aRxBuffer[6];//0x30;//ptMsg->usData[0]++;
+		ptMsg->uXData[6]=aRxBuffer[7];//0x04;//ptMsg->ulData[0]++;;
+        ptMsg->uXData[7]=aRxBuffer[8];//0x40;//ptMsg->usData[0]++;
+		xlength = LENGTH(aRxBuffer)-1;
+		for(i=0;i<xlength; i++)
+		{
+		    Xtree=insert(ptMsg->uXData[i],Xtree);
+		}
 		#endif
         /* 使用消息队列实现指针变量的传递 */
         if(xQueueSend(xQueue1,                  /* 消息队列句柄 */
@@ -346,7 +361,8 @@ static void vTaskTaskUserIF(void *pvParameters)
 ***************************************************************************************/
 static void vTaskX_axis(void *pvParameters)
 {
-    MSG_T *ptMsg;
+    uint8_t xh,max_height;
+	MSG_T *ptMsg;
 	BaseType_t xResult;
 	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 设置最大等待时间为200ms */
 	
@@ -362,6 +378,7 @@ static void vTaskX_axis(void *pvParameters)
 		{
 			/* 成功接收，并通过串口将数据打印出来 */
 			printf("X_axis= %#x\r\n", ptMsg->ucMessageID);
+			#if 0
 			printf("X_axis[0]= %#x\r\n", ptMsg->uXData[0]);
 			printf("X_axis[1]= %#x\r\n", ptMsg->uXData[1]);
 			printf("X_axis[2]= %#x\r\n", ptMsg->uXData[2]);
@@ -370,6 +387,16 @@ static void vTaskX_axis(void *pvParameters)
 			printf("X_axis[5]= %#x\r\n", ptMsg->uXData[5]);
 			printf("X_axis[6]= %#x\r\n", ptMsg->uXData[6]);
 			printf("X_axis[7]= %#x\r\n", ptMsg->uXData[7]);
+			#endif
+			printf("==树的详细信息:\n");
+            printf_avltree(Xtree,Xtree->element,0);
+			xh=getHeight(Xtree)+1;
+			printf("\n树的高度xh=%d\n",xh);
+			printf("\先序遍历: ");
+			preOrder(Xtree);
+			printf("\n中序遍历: ");
+			inOrder(Xtree);
+			
 			STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // X轴反向移动30圈
 		}
 		else
