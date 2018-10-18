@@ -21,7 +21,10 @@ static QueueHandle_t xQueue3 = NULL; //WT.EDIT
 static QueueHandle_t xQueue4 = NULL; //WT.EDIT
 
 KEY key1,key2,key3,key4,key5;
-
+extern int X_axis;
+extern int Y_axis;
+extern int Z_axis;
+extern int R_axis;
 uint8_t aRxBuffer[8];
 // ËÙ¶È×î´óÖµÓÉÇı¶¯Æ÷ºÍµç»ú¾ö¶¨£¬ÓĞĞ©×î´óÊÇ1800£¬ÓĞĞ©¿ÉÒÔ´ïµ½4000
 __IO uint32_t set_speed  = 3000;         // ËÙ¶È µ¥Î»Îª0.05rad/sec
@@ -141,27 +144,37 @@ int main(void)
   * ·µ »Ø Öµ: ÎŞ
   * Ëµ    Ã÷: ÎŞ
   */
-static uint32_t g_uiCount = 0; /* ÉèÖÃÎªÈ«¾Ö¾²Ì¬±äÁ¿£¬·½±ãÊı¾İ¸üĞÂ */
+//static uint32_t g_uiCount = 0; /* ÉèÖÃÎªÈ«¾Ö¾²Ì¬±äÁ¿£¬·½±ãÊı¾İ¸üĞÂ */
 
 static void vTaskTaskUserIF(void *pvParameters)
 {
-    uint8_t pcWriteBuffer[500];
+    
+  MSG_T   *ptMsg;
+  uint8_t ucCount = 0;
+  uint8_t pcWriteBuffer[500];
+  	/* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
+	ptMsg = &g_tMsg;
 	
+	/* ³õÊ¼»¯Êı×é */
+	ptMsg->ucMessageID = 0;
+	ptMsg->ulData[0] = 0;
+	ptMsg->usData[0] = 0;
+  
     /* ´´½¨°´¼ü */
-    KeyCreate(&key1,GetPinStateOfKey1);
-	KeyCreate(&key2,GetPinStateOfKey2);
-	KeyCreate(&key3,GetPinStateOfKey3);
- 
-  printf("KEY1¡¢KEY2ºÍKEY3¶ÔÓ¦²»Í¬ÈÎÎñÇé¿ö\n");
+  KeyCreate(&key1,GetPinStateOfKey1);
+  KeyCreate(&key2,GetPinStateOfKey2);
+  KeyCreate(&key3,GetPinStateOfKey3);
+  printf("°´ÏÂKEY1¡¢KEY2ºÍKEY3Ö´ĞĞ²»Í¬µÄÈÎÎñ\n");
 
     while(1)
     {
       Key_RefreshState(&key1);//Ë¢ĞÂ°´¼ü×´Ì¬
       Key_RefreshState(&key2);//Ë¢ĞÂ°´¼ü×´Ì¬
       Key_RefreshState(&key3);//Ë¢ĞÂ°´¼ü×´Ì¬
-   
-      #if 1
-	  HAL_UART_Receive(&husart_debug,aRxBuffer,8,0xffff);
+		
+	
+      HAL_UART_Receive(&husart_debug,aRxBuffer,8,0xffff);
+	#if 0
 	   printf("aRxBuffer[0]=%#x \n",aRxBuffer[0]);
 	   printf("aRxBuffer[1]=%#x \n",aRxBuffer[1]);
 	   printf("aRxBuffer[2]=%#x \n",aRxBuffer[2]);
@@ -170,8 +183,8 @@ static void vTaskTaskUserIF(void *pvParameters)
 	   printf("aRxBuffer[2]=%#x \n",aRxBuffer[5]);
 	   printf("aRxBuffer[2]=%#x \n",aRxBuffer[6]);
 	   printf("aRxBuffer[7]=%#x \n",aRxBuffer[7]);
-	   #endif 
-       if(aRxBuffer[0]==0x00)//if(Key_AccessTimes(&key1,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
+	   #endif 		
+   if(Key_AccessTimes(&key1,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
       {
         printf("=================================================\r\n");
         printf("ÈÎÎñÃû      ÈÎÎñ×´Ì¬ ÓÅÏÈ¼¶   Ê£ÓàÕ» ÈÎÎñĞòºÅ\r\n");
@@ -180,127 +193,162 @@ static void vTaskTaskUserIF(void *pvParameters)
        
         printf("\r\nÈÎÎñÃû       ÔËĞĞ¼ÆÊı         Ê¹ÓÃÂÊ\r\n");
         vTaskGetRunTimeStats((char *)&pcWriteBuffer);
-        printf("%s\r\n", pcWriteBuffer);
+        printf("%s\r\n", pcWriteBuffer);        
         Key_AccessTimes(&key1,KEY_ACCESS_WRITE_CLEAR);
       }
       
       if(aRxBuffer[0]==0xa1)//if(Key_AccessTimes(&key2,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
-      {         
-         // printf("KEY2°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
-		  aRxBuffer[0]=0;
-          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-          
-           g_uiCount=aRxBuffer[7];
-		  	  
-		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
-		   xQueueSendFromISR(xQueue1,
-					  (void *)&g_uiCount,
-					   &xHigherPriorityTaskWoken);
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-			Key_AccessTimes(&key2,KEY_ACCESS_WRITE_CLEAR);
-		}  
-	   if(aRxBuffer[0]==0xa2)
-	   {
-		   aRxBuffer[0]=0;
-		   MSG_T   *ptMsg=NULL;
-          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      { 
+        ucCount++;
+        /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ£¬Èç¹ûÏûÏ¢¶ÓÁĞÂúÁË£¬µÈ´ı10¸öÊ±ÖÓ½ÚÅÄ */
+        if( xQueueSend(xQueue1,
+                 (void *) &ucCount,
+                 (TickType_t)10) != pdPASS )
+        {
+          /* ·¢ËÍÊ§°Ü£¬¼´Ê¹µÈ´ıÁË10¸öÊ±ÖÓ½ÚÅÄ */
+          printf("KEY2°´ÏÂ£¬ÏòxQueue1·¢ËÍÊı¾İÊ§°Ü£¬¼´Ê¹µÈ´ıÁË10¸öÊ±ÖÓ½ÚÅÄ\r\n");
+        }
+        else
+        {
+          /* ·¢ËÍ³É¹¦ */
+          printf("KEY2°´ÏÂ£¬ÏòxQueue1·¢ËÍÊı¾İ³É¹¦\r\n");						
+        }        
+        Key_AccessTimes(&key2,KEY_ACCESS_WRITE_CLEAR);
+      }  
       
-         /* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
-          ptMsg = &g_tMsg;
-          
-		  /* ³õÊ¼»¯Êı×é */
-		  ptMsg->ucMessageID=aRxBuffer[0];
-		  ptMsg->ulData[0]=aRxBuffer[0];
-		  ptMsg->usData[1]=aRxBuffer[1];
-		  ptMsg->ulData[2]=aRxBuffer[2];
-		  ptMsg->usData[3]=aRxBuffer[3];
-		  ptMsg->usData[4]=aRxBuffer[4];
-		  ptMsg->ulData[5]=aRxBuffer[5];
-		  ptMsg->usData[6]=aRxBuffer[6];
-		  ptMsg->usData[7]=aRxBuffer[7];
-		   
-		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾-İ   --WT.EDIT */
-			xQueueSendFromISR(xQueue2,
-					  (void *)&g_tMsg,
-					   &xHigherPriorityTaskWoken);
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-			Key_AccessTimes(&key2,KEY_ACCESS_WRITE_CLEAR);
-	  }
-      
-      if(aRxBuffer[0]==0xa3)//if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
-      {         
-           aRxBuffer[0]=0;
-		  MSG_T   *ptMsg=NULL;
-          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      
-         /* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
-          ptMsg = &g_tMsg;
-          
-		  /* ³õÊ¼»¯Êı×é */
-		  ptMsg->ucMessageID=aRxBuffer[0];
-		  ptMsg->ulData[0]=aRxBuffer[1];
-		  ptMsg->usData[0]=aRxBuffer[0];
-      
-         /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
-         xQueueSendFromISR(xQueue3,
-                  (void *)&g_tMsg,
-                  &xHigherPriorityTaskWoken);
-		 portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-         Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);  
-				  
-	   }
-       if(aRxBuffer[0]==0xa4)
-	   {		   
-		   aRxBuffer[0]=0;
-		   MSG_T   *ptMsg=NULL;
-          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      
-         /* ³õÊ¼»¯½á¹¹ÌåÖ¸Õë */
-          ptMsg = &g_tMsg;
-          
-		  /* ³õÊ¼»¯Êı×é */
-		   
-		  
-		  #if 0
-		  //ptMsg->ucMessageID=aRxBuffer[0];
-		//  ptMsg->ulData[0]=aRxBuffer[];
-		  ptMsg->usData[0]=aRxBuffer[0];
-		  ptMsg->usData[1]=aRxBuffer[1];
-		  ptMsg->usData[2]=aRxBuffer[2];
-		  ptMsg->usData[3]=aRxBuffer[3];
-		  ptMsg->usData[4]=aRxBuffer[4];
-		  ptMsg->usData[5]=aRxBuffer[5];
-		   
-		  printf("usData[0]=%#x\n",ptMsg->usData[0]);
-		  printf("usData[1]=%#x\n",ptMsg->usData[1]);
-		  printf("usData[2]=%#x\n",ptMsg->usData[2]);
-		  printf("usData[3]=%#x\n",ptMsg->usData[3]);
-		   printf("usData[4]=%#x\n",ptMsg->usData[4]);
-		  printf("usData[5]=%#x\n",ptMsg->usData[5]);
-		   #endif
-		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
-               xQueueSendFromISR(xQueue4,
-                  (void *)&g_tMsg,
-                  &xHigherPriorityTaskWoken);
-				 
+      if(aRxBuffer[0]==0xa2)//if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
+      { 
+        aRxBuffer[0]=0;
+		ptMsg->ucMessageID++;
+		#if 1
+        ptMsg->ulData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
+        ptMsg->usData[0]=aRxBuffer[0];//0x10;//ptMsg->usData[0]++;
+		ptMsg->ulData[1]=aRxBuffer[1];//0x02;//ptMsg->ulData[0]++;;
+        ptMsg->usData[1]=aRxBuffer[1];//0x20;//ptMsg->usData[0]++;
+		ptMsg->ulData[2]=aRxBuffer[2];//0x03;//ptMsg->ulData[0]++;;
+        ptMsg->usData[2]=aRxBuffer[2];//0x30;//ptMsg->usData[0]++;
+		ptMsg->ulData[3]=aRxBuffer[3];//0x04;//ptMsg->ulData[0]++;;
+        ptMsg->usData[3]=aRxBuffer[3];//0x40;//ptMsg->usData[0]++;
+		ptMsg->ulData[4]=aRxBuffer[4];//0x05;//ptMsg->ulData[0]++;;
+        ptMsg->usData[4]=aRxBuffer[4];//0x50;//ptMsg->usData[0]++;
+		ptMsg->ulData[5]=aRxBuffer[5];//0x06;//ptMsg->ulData[0]++;;
+        ptMsg->usData[5]=aRxBuffer[5];//0x60;//ptMsg->usData[0]++;
+		ptMsg->ulData[6]=aRxBuffer[6];//0x07;//ptMsg->ulData[0]++;;
+        ptMsg->usData[6]=aRxBuffer[6];//0x70;//ptMsg->usData[0]++;
+		ptMsg->ulData[7]=aRxBuffer[7];//0x8a;//ptMsg->ulData[0]++;;
+        ptMsg->usData[7]=aRxBuffer[7];//0xa8;//ptMsg->usData[0]++;
+		#endif
+        /* Ê¹ÓÃÏûÏ¢¶ÓÁĞÊµÏÖÖ¸Õë±äÁ¿µÄ´«µİ */
+        if(xQueueSend(xQueue2,                  /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
+               (void *) &ptMsg,           /* ·¢ËÍ½á¹¹ÌåÖ¸Õë±äÁ¿ptMsgµÄµØÖ· */
+               (TickType_t)20) != pdPASS )
+        {
+          /* ·¢ËÍÊ§°Ü£¬¼´Ê¹µÈ´ıÁË10¸öÊ±ÖÓ½ÚÅÄ */
+          printf("KEY3°´ÏÂ£¬ÏòxQueue1·¢ËÍÊı¾İÊ§°Ü£¬¼´Ê¹µÈ´ıÁË10¸öÊ±ÖÓ½ÚÅÄ\r\n");
+        }
+		else
+        {
+          /* ·¢ËÍ³É¹¦ */
+          printf("KEY3°´ÏÂ£¬ÏòxQueue2·¢ËÍÊı¾İ³É¹¦\r\n");						
+        } 
 
-        /* Èç¹ûxHigherPriorityTaskWoken = pdTRUE£¬ÄÇÃ´ÍË³öÖĞ¶ÏºóÇĞµ½µ±Ç°×î¸ßÓÅÏÈ¼¶ÈÎÎñÖ´ĞĞ */
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-        
+      		
         Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
-	   }
-         
+      }
+	  
+      if(aRxBuffer[0]==0xa3)//if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
+      { 
+        aRxBuffer[0]=0;
+		ptMsg->ucMessageID++;
+		#if 1
+        ptMsg->ulData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
+        ptMsg->usData[0]=aRxBuffer[0];//0x10;//ptMsg->usData[0]++;
+		ptMsg->ulData[1]=aRxBuffer[1];//0x02;//ptMsg->ulData[0]++;;
+        ptMsg->usData[1]=aRxBuffer[1];//0x20;//ptMsg->usData[0]++;
+		ptMsg->ulData[2]=aRxBuffer[2];//0x03;//ptMsg->ulData[0]++;;
+        ptMsg->usData[2]=aRxBuffer[2];//0x30;//ptMsg->usData[0]++;
+		ptMsg->ulData[3]=aRxBuffer[3];//0x04;//ptMsg->ulData[0]++;;
+        ptMsg->usData[3]=aRxBuffer[3];//0x40;//ptMsg->usData[0]++;
+		ptMsg->ulData[4]=aRxBuffer[4];//0x05;//ptMsg->ulData[0]++;;
+        ptMsg->usData[4]=aRxBuffer[4];//0x50;//ptMsg->usData[0]++;
+		ptMsg->ulData[5]=aRxBuffer[5];//0x06;//ptMsg->ulData[0]++;;
+        ptMsg->usData[5]=aRxBuffer[5];//0x60;//ptMsg->usData[0]++;
+		ptMsg->ulData[6]=aRxBuffer[6];//0x07;//ptMsg->ulData[0]++;;
+        ptMsg->usData[6]=aRxBuffer[6];//0x70;//ptMsg->usData[0]++;
+		ptMsg->ulData[7]=aRxBuffer[7];//0x8a;//ptMsg->ulData[0]++;;
+        ptMsg->usData[7]=aRxBuffer[7];//0xa8;//ptMsg->usData[0]++;
+		#endif
+        /* Ê¹ÓÃÏûÏ¢¶ÓÁĞÊµÏÖÖ¸Õë±äÁ¿µÄ´«µİ */
+        if(xQueueSend(xQueue3,                  /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
+               (void *) &ptMsg,           /* ·¢ËÍ½á¹¹ÌåÖ¸Õë±äÁ¿ptMsgµÄµØÖ· */
+               (TickType_t)20) != pdPASS )
+        {
+          /* ·¢ËÍÊ§°Ü£¬¼´Ê¹µÈ´ıÁË10¸öÊ±ÖÓ½ÚÅÄ */
+          printf("KEY3°´ÏÂ£¬ÏòxQueue3·¢ËÍÊı¾İÊ§°Ü£¬¼´Ê¹µÈ´ıÁË10¸öÊ±ÖÓ½ÚÅÄ\r\n");
+        }
+		else
+        {
+          /* ·¢ËÍ³É¹¦ */
+          printf("KEY3°´ÏÂ£¬ÏòxQueue3·¢ËÍÊı¾İ³É¹¦\r\n");						
+        } 
+
+      		
+        Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
+      } 
+	  
+	  //RÖá
+      if(aRxBuffer[0]==0xa4)//if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
+      { 
+        aRxBuffer[0]=0;
+		ptMsg->ucMessageID++;
+		#if 1
+        ptMsg->ulData[0]=aRxBuffer[0];//0x01;//ptMsg->ulData[0]++;;
+        ptMsg->usData[0]=aRxBuffer[0];//0x10;//ptMsg->usData[0]++;
+		ptMsg->ulData[1]=aRxBuffer[1];//0x02;//ptMsg->ulData[0]++;;
+        ptMsg->usData[1]=aRxBuffer[1];//0x20;//ptMsg->usData[0]++;
+		ptMsg->ulData[2]=aRxBuffer[2];//0x03;//ptMsg->ulData[0]++;;
+        ptMsg->usData[2]=aRxBuffer[2];//0x30;//ptMsg->usData[0]++;
+		ptMsg->ulData[3]=aRxBuffer[3];//0x04;//ptMsg->ulData[0]++;;
+        ptMsg->usData[3]=aRxBuffer[3];//0x40;//ptMsg->usData[0]++;
+		ptMsg->ulData[4]=aRxBuffer[4];//0x05;//ptMsg->ulData[0]++;;
+        ptMsg->usData[4]=aRxBuffer[4];//0x50;//ptMsg->usData[0]++;
+		ptMsg->ulData[5]=aRxBuffer[5];//0x06;//ptMsg->ulData[0]++;;
+        ptMsg->usData[5]=aRxBuffer[5];//0x60;//ptMsg->usData[0]++;
+		ptMsg->ulData[6]=aRxBuffer[6];//0x07;//ptMsg->ulData[0]++;;
+        ptMsg->usData[6]=aRxBuffer[6];//0x70;//ptMsg->usData[0]++;
+		ptMsg->ulData[7]=aRxBuffer[7];//0x8a;//ptMsg->ulData[0]++;;
+        ptMsg->usData[7]=aRxBuffer[7];//0xa8;//ptMsg->usData[0]++;
+		#endif
+        /* Ê¹ÓÃÏûÏ¢¶ÓÁĞÊµÏÖÖ¸Õë±äÁ¿µÄ´«µİ */
+        if(xQueueSend(xQueue4,                  /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
+               (void *) &ptMsg,           /* ·¢ËÍ½á¹¹ÌåÖ¸Õë±äÁ¿ptMsgµÄµØÖ· */
+               (TickType_t)20) != pdPASS )
+        {
+          /* ·¢ËÍÊ§°Ü£¬¼´Ê¹µÈ´ıÁË10¸öÊ±ÖÓ½ÚÅÄ */
+          printf("KEY3°´ÏÂ£¬ÏòxQueue4·¢ËÍÊı¾İÊ§°Ü£¬¼´Ê¹µÈ´ıÁË10¸öÊ±ÖÓ½ÚÅÄ\r\n");
+        }
+		else
+        {
+          /* ·¢ËÍ³É¹¦ */
+          LED4_TOGGLE;//printf("KEY3°´ÏÂ£¬ÏòxQueue3·¢ËÍÊı¾İ³É¹¦\r\n");						
+        } 
+
+      		
+        Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
+      } 
      vTaskDelay(20);
   }
 		
 }
 
-/**
+/************************************************************
+  *
   * º¯Êı¹¦ÄÜ: LED1ÈÎÎñ
   * ÊäÈë²ÎÊı: ÎŞ
   * ·µ »Ø Öµ: ÎŞ
   * Ëµ    Ã÷: ÎŞ
-  */
+  *
+*************************************************************/
 static void vTaskX_axis(void *pvParameters)
 {
   BaseType_t xResult;
@@ -341,37 +389,47 @@ static void vTaskX_axis(void *pvParameters)
 ***********************************************************/
 static void vTaskY_axis(void *pvParameters)
 {
-    MSG_T *ptMsg;
+   
+	 MSG_T *ptMsg;
 	BaseType_t xResult;
+	
 	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
 
   while(1)
   {
-   xResult = xQueueReceive(xQueue2,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
-                          (void *)&ptMsg,  /* ´æ´¢½ÓÊÕµ½µÄÊı¾İµ½±äÁ¿ucQueueMsgValueÖĞ */
-                          (TickType_t)xMaxBlockTime);/* ÉèÖÃ×èÈûÊ±¼ä */
-  
-    if(xResult == pdPASS)
-    {
-      
-       /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-	  printf("Y_axis:ptMsg->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
-      printf("Y_axis:ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
-      printf("Y_axis:tMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
-	  printf("Y_axis:ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
-      printf("Y_axis:tMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
-	  printf("Y_axis:ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
-      printf("Y_axis:tMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
-	  STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // XÖá·´ÏòÒÆ¶¯30È¦
-		
-	 
-    }
-    else
-    {
-      LED2_TOGGLE;
-    }
+		xResult = xQueueReceive(xQueue2,                   /* ÏûÏ¢¶ÓÁĞ¾ä±ú */
+		                        (void *)&ptMsg,  		   /* ÕâÀï»ñÈ¡µÄÊÇ½á¹¹ÌåµÄµØÖ· */
+		                        (TickType_t)xMaxBlockTime);/* ÉèÖÃ×èÈûÊ±¼ä */
 	
+		
+		if(xResult == pdPASS)
+		{
+			/* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
+			printf("Y_axis:->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[0] = %#x\r\n", ptMsg->ulData[0]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[1] = %#x\r\n", ptMsg->ulData[1]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[2] = %#x\r\n", ptMsg->ulData[2]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[3] = %#x\r\n", ptMsg->ulData[3]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[4] = %#x\r\n", ptMsg->ulData[4]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[5] = %#x\r\n", ptMsg->ulData[5]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[6] = %#x\r\n", ptMsg->ulData[6]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[6] = %#x\r\n", ptMsg->usData[6]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->ulData[7] = %#x\r\n", ptMsg->ulData[7]);
+			printf("½ÓÊÕµ½ÏûÏ¢¶ÓÁĞÊı¾İptMsg->usData[7] = %#x\r\n", ptMsg->usData[7]);
+			  STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // XÖá·´ÏòÒÆ¶¯30È¦
+		}
+		else
+		{
+			LED2_TOGGLE;    
+		}
   }
+	
 }
 
 /**************************************************
@@ -399,9 +457,24 @@ static void vTaskZ_axis(void *pvParameters)
     if(xResult == pdPASS)
     {
       /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-	    printf("Z_axis:tMsg->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
-		printf("Z_axis:ptMsg->ulData[0] = %#x\r\n", ptMsg->ulData[0]);
-		printf("Z_axis:tMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
+	    /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
+			printf("Z_axis:->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
+			printf("Z_axis:İptMsg->ulData[0] = %#x\r\n", ptMsg->ulData[0]);
+			printf("Z_axis:ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
+			printf("Z_axis:ptMsg->ulData[1] = %#x\r\n", ptMsg->ulData[1]);
+			printf("Z_axis:ptMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
+			printf("Z_axis:ptMsg->ulData[2] = %#x\r\n", ptMsg->ulData[2]);
+			printf("Z_axis:ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
+			printf("Z_axis:ptMsg->ulData[3] = %#x\r\n", ptMsg->ulData[3]);
+			printf("Z_axis:ptMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
+			printf("Z_axis:ptMsg->ulData[4] = %#x\r\n", ptMsg->ulData[4]);
+			printf("Z_axis:ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
+			printf("Z_axis:ptMsg->ulData[5] = %#x\r\n", ptMsg->ulData[5]);
+			printf("Z_axis:ptMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
+			printf("Z_axis:ptMsg->ulData[6] = %#x\r\n", ptMsg->ulData[6]);
+			printf("Z_axis:ptMsg->usData[6] = %#x\r\n", ptMsg->usData[6]);
+			printf("Z_axis:ptMsg->ulData[7] = %#x\r\n", ptMsg->ulData[7]);
+			printf("Z_axis:ptMsg->usData[7] = %#x\r\n", ptMsg->usData[7]);
 	  //STEPMOTOR_DisMoveAbs(AXIS_Z,400,step_accel,step_decel,set_speed);//XÖáÒÆ¶¯µ½400mmµÄÎ»ÖÃ
 	   STEPMOTOR_AxisMoveRel(AXIS_Z,30*SPR*CCW,step_accel,step_decel,set_speed); // ZÖá·´ÏòÒÆ¶¯30È¦
 	}
@@ -428,7 +501,7 @@ static void vTaskR_axis(void *pvParameters)
     {
        MSG_T *ptMsg;
 	   BaseType_t xResult;
-	   const TickType_t xMaxBlockTime = pdMS_TO_TICKS(500); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
+	   const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
 
 	  while(1)
 	  {
@@ -439,28 +512,29 @@ static void vTaskR_axis(void *pvParameters)
 		if(xResult == pdPASS)
 		{
 		  /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-			printf("R_axis:ptMsg->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
-            R_axis=1;
-			  printf("Y_axis:ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
-			  printf("Y_axis:tMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
-			  printf("Y_axis:ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
-			  printf("Y_axis:tMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
-			  printf("Y_axis:ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
-			  printf("Y_axis:tMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
-			
-	
-		}
+			R_axis=1;
+			printf("R_axis:->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
+			printf("R_axis:İptMsg->ulData[0] = %#x\r\n", ptMsg->ulData[0]);
+			printf("R_axis:ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
+			printf("R_axis:ptMsg->ulData[1] = %#x\r\n", ptMsg->ulData[1]);
+			printf("R_axis:ptMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
+			printf("R_axis:ptMsg->ulData[2] = %#x\r\n", ptMsg->ulData[2]);
+			printf("R_axis:ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
+			printf("R_axis:ptMsg->ulData[3] = %#x\r\n", ptMsg->ulData[3]);
+			printf("R_axis:ptMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
+			printf("R_axis:ptMsg->ulData[4] = %#x\r\n", ptMsg->ulData[4]);
+			printf("R_axis:ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
+			printf("R_axis:ptMsg->ulData[5] = %#x\r\n", ptMsg->ulData[5]);
+			printf("R_axis:ptMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
+			printf("Z_axis:ptMsg->ulData[6] = %#x\r\n", ptMsg->ulData[6]);
+			printf("Z_axis:ptMsg->usData[6] = %#x\r\n", ptMsg->usData[6]);
+			printf("Z_axis:ptMsg->ulData[7] = %#x\r\n", ptMsg->ulData[7]);
+			printf("Z_axis:ptMsg->usData[7] = %#x\r\n", ptMsg->usData[7]);
+			 
+	    }
 		if(R_axis==1)
 		{
 		   R_axis=0;
-		   printf("aRxBuffer[0]=%#x \n",aRxBuffer[0]);
-		   printf("aRxBuffer[1]=%#x \n",aRxBuffer[1]);
-		   printf("aRxBuffer[2]=%#x \n",aRxBuffer[2]);
-		   printf("aRxBuffer[0]=%#x \n",aRxBuffer[3]);
-		   printf("aRxBuffer[1]=%#x \n",aRxBuffer[4]);
-		   printf("aRxBuffer[2]=%#x \n",aRxBuffer[5]);
-		   printf("aRxBuffer[2]=%#x \n",aRxBuffer[6]);
-		   printf("aRxBuffer[7]=%#x \n",aRxBuffer[7]);
 			STEPMOTOR_AxisMoveRel(AXIS_R,30*SPR*CW,step_accel,step_decel,set_speed);  // RÖáÕıÏòÒÆ¶¯30È¦
 		
 		}
@@ -532,7 +606,7 @@ static void AppTaskCreate (void)
 static void AppObjCreate (void)
 {
 	/* ´´½¨10¸öuint8_tĞÍÏûÏ¢¶ÓÁĞ */
-	xQueue1 = xQueueCreate(10, sizeof(uint8_t));
+	xQueue1 = xQueueCreate(5, sizeof(uint8_t));
     if( xQueue1 == 0 )
     {
         /* Ã»ÓĞ´´½¨³É¹¦£¬ÓÃ»§¿ÉÒÔÔÚÕâÀï¼ÓÈë´´½¨Ê§°ÜµÄ´¦Àí»úÖÆ */
@@ -540,20 +614,20 @@ static void AppObjCreate (void)
     }
 	
 	/* ´´½¨10¸ö´æ´¢Ö¸Õë±äÁ¿µÄÏûÏ¢¶ÓÁĞ£¬ÓÉÓÚCM3/CM4ÄÚºËÊÇ32Î»»ú£¬Ò»¸öÖ¸Õë±äÁ¿Õ¼ÓÃ4¸ö×Ö½Ú */
-	xQueue2 = xQueueCreate(10, sizeof(struct Msg *));
+	xQueue2 = xQueueCreate(5, sizeof(struct Msg *));
     if( xQueue2 == 0 )
     {
         /* Ã»ÓĞ´´½¨³É¹¦£¬ÓÃ»§¿ÉÒÔÔÚÕâÀï¼ÓÈë´´½¨Ê§°ÜµÄ´¦Àí»úÖÆ */
 		printf("xQueue2 don't set up ERROR !\n");
     }
 	/* ´´½¨10¸ö´æ´¢Ö¸Õë±äÁ¿µÄÏûÏ¢¶ÓÁĞ£¬ÓÉÓÚCM3/CM4ÄÚºËÊÇ32Î»»ú£¬Ò»¸öÖ¸Õë±äÁ¿Õ¼ÓÃ4¸ö×Ö½Ú */
-	xQueue3 = xQueueCreate(10, sizeof(struct Msg *));
+	xQueue3 = xQueueCreate(5, sizeof(struct Msg *));
     if( xQueue3 == 0 )
     {
         /* Ã»ÓĞ´´½¨³É¹¦£¬ÓÃ»§¿ÉÒÔÔÚÕâÀï¼ÓÈë´´½¨Ê§°ÜµÄ´¦Àí»úÖÆ */
 		printf("xQueue3 don't set up ERROR !\n");
     }
-	xQueue4 = xQueueCreate(10, sizeof(struct Msg *));
+	xQueue4 = xQueueCreate(5, sizeof(struct Msg *));
     if( xQueue4 == 0 )
     {
         printf("xQueue4 don't set up ERROR !\n");
