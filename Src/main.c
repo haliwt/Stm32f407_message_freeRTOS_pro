@@ -33,8 +33,8 @@ __IO uint32_t step_decel = 100;         // ¼õËÙ¶È µ¥Î»Îª0.05rad/sec^2
 typedef struct Msg
 {
 	uint8_t  ucMessageID;
-	uint16_t usData[2];
-	uint32_t ulData[2];
+	uint8_t usData[8];
+	uint8_t ulData[8];
 }MSG_T;
 
 MSG_T  g_tMsg; /* ¶¨ÒåÒ»¸ö½á¹¹ÌåÓÃÓÚÏûÏ¢¶ÓÁĞ */
@@ -145,7 +145,8 @@ static uint32_t g_uiCount = 0; /* ÉèÖÃÎªÈ«¾Ö¾²Ì¬±äÁ¿£¬·½±ãÊı¾İ¸üĞÂ */
 
 static void vTaskTaskUserIF(void *pvParameters)
 {
-  uint8_t pcWriteBuffer[500];
+    uint8_t pcWriteBuffer[500];
+	
     /* ´´½¨°´¼ü */
     KeyCreate(&key1,GetPinStateOfKey1);
 	KeyCreate(&key2,GetPinStateOfKey2);
@@ -185,11 +186,11 @@ static void vTaskTaskUserIF(void *pvParameters)
       
       if(aRxBuffer[0]==0xa1)//if(Key_AccessTimes(&key2,KEY_ACCESS_READ)!=0)//°´¼ü±»°´ÏÂ¹ı
       {         
-          printf("KEY2°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
-		 
+         // printf("KEY2°´ÏÂ£¬Æô¶¯µ¥´Î¶¨Ê±Æ÷ÖĞ¶Ï£¬50msºóÔÚ¶¨Ê±Æ÷ÖĞ¶Ï¸øÈÎÎñvTaskMsgPro·¢ËÍÏûÏ¢\r\n");
+		  aRxBuffer[0]=0;
           BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      
-           g_uiCount=aRxBuffer[0];
+          
+           g_uiCount=aRxBuffer[7];
 		  	  
 		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
 		   xQueueSendFromISR(xQueue1,
@@ -208,8 +209,14 @@ static void vTaskTaskUserIF(void *pvParameters)
           
 		  /* ³õÊ¼»¯Êı×é */
 		  ptMsg->ucMessageID=aRxBuffer[0];
-		  ptMsg->ulData[0]=aRxBuffer[1];
-		  ptMsg->usData[0]=aRxBuffer[2];
+		  ptMsg->ulData[0]=aRxBuffer[0];
+		  ptMsg->usData[1]=aRxBuffer[1];
+		  ptMsg->ulData[2]=aRxBuffer[2];
+		  ptMsg->usData[3]=aRxBuffer[3];
+		  ptMsg->usData[4]=aRxBuffer[4];
+		  ptMsg->ulData[5]=aRxBuffer[5];
+		  ptMsg->usData[6]=aRxBuffer[6];
+		  ptMsg->usData[7]=aRxBuffer[7];
 		   
 		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾-İ   --WT.EDIT */
 			xQueueSendFromISR(xQueue2,
@@ -230,7 +237,7 @@ static void vTaskTaskUserIF(void *pvParameters)
 		  /* ³õÊ¼»¯Êı×é */
 		  ptMsg->ucMessageID=aRxBuffer[0];
 		  ptMsg->ulData[0]=aRxBuffer[1];
-		  ptMsg->usData[0]=aRxBuffer[2];
+		  ptMsg->usData[0]=aRxBuffer[0];
       
          /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
          xQueueSendFromISR(xQueue3,
@@ -249,12 +256,25 @@ static void vTaskTaskUserIF(void *pvParameters)
           ptMsg = &g_tMsg;
           
 		  /* ³õÊ¼»¯Êı×é */
-		  ptMsg->ucMessageID=aRxBuffer[0];
-		  ptMsg->ulData[0]=aRxBuffer[1];
-		  ptMsg->usData[0]=aRxBuffer[2];
 		   
+		 
+		  #if 0
+		  //ptMsg->ucMessageID=aRxBuffer[0];
+		//  ptMsg->ulData[0]=aRxBuffer[];
+		  ptMsg->usData[0]=aRxBuffer[0];
+		  ptMsg->usData[1]=aRxBuffer[1];
+		  ptMsg->usData[2]=aRxBuffer[2];
+		  ptMsg->usData[3]=aRxBuffer[3];
+		  ptMsg->usData[4]=aRxBuffer[4];
+		  ptMsg->usData[5]=aRxBuffer[5];
 		   
-		   
+		  printf("usData[0]=%#x\n",ptMsg->usData[0]);
+		  printf("usData[1]=%#x\n",ptMsg->usData[1]);
+		  printf("usData[2]=%#x\n",ptMsg->usData[2]);
+		  printf("usData[3]=%#x\n",ptMsg->usData[3]);
+		   printf("usData[4]=%#x\n",ptMsg->usData[4]);
+		  printf("usData[5]=%#x\n",ptMsg->usData[5]);
+		   #endif
 		   /* ÏòÏûÏ¢¶ÓÁĞ·¢Êı¾İ */
                xQueueSendFromISR(xQueue4,
                   (void *)&g_tMsg,
@@ -295,7 +315,7 @@ static void vTaskX_axis(void *pvParameters)
     if(xResult == pdPASS)
     {
       /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-		printf("X_axis:ucQueueMsgValue = %d\r\n", ucQueueMsgValue);
+		printf("X_axis:ucQueueMsgValue = %#x\r\n", ucQueueMsgValue);
 	 // STEPMOTOR_DisMoveAbs(AXIS_X,400,step_accel,step_decel,set_speed);//XÖáÒÆ¶¯µ½400mmµÄÎ»ÖÃ ¾Ö¶Ô¾àÀë
 	   STEPMOTOR_AxisMoveRel(AXIS_X,30*SPR*CCW,step_accel,step_decel,set_speed); // ZÖá·´ÏòÒÆ¶¯30È¦£¬Ïà¶Ô¾àÀë
 	  
@@ -332,9 +352,13 @@ static void vTaskY_axis(void *pvParameters)
     {
       
        /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-	  printf("Y_axis:ptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
-      printf("Y_axis:ptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
-      printf("Y_axis:tMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
+	  printf("Y_axis:ptMsg->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
+      printf("Y_axis:ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
+      printf("Y_axis:tMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
+	  printf("Y_axis:ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
+      printf("Y_axis:tMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
+	  printf("Y_axis:ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
+      printf("Y_axis:tMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
 	  STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // XÖá·´ÏòÒÆ¶¯30È¦
 		
 	 
@@ -372,9 +396,9 @@ static void vTaskZ_axis(void *pvParameters)
     if(xResult == pdPASS)
     {
       /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-	    printf("Z_axis:tMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
-		printf("Z_axis:ptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
-		printf("Z_axis:tMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
+	    printf("Z_axis:tMsg->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
+		printf("Z_axis:ptMsg->ulData[0] = %#x\r\n", ptMsg->ulData[0]);
+		printf("Z_axis:tMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
 	  //STEPMOTOR_DisMoveAbs(AXIS_Z,400,step_accel,step_decel,set_speed);//XÖáÒÆ¶¯µ½400mmµÄÎ»ÖÃ
 	   STEPMOTOR_AxisMoveRel(AXIS_Z,30*SPR*CCW,step_accel,step_decel,set_speed); // ZÖá·´ÏòÒÆ¶¯30È¦
 	}
@@ -396,11 +420,12 @@ static void vTaskZ_axis(void *pvParameters)
 ***************************************************/
 static void vTaskR_axis(void *pvParameters)
 {
-    while(1)
+    int R_axis=0;
+	while(1)
     {
        MSG_T *ptMsg;
 	   BaseType_t xResult;
-	   const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
+	   const TickType_t xMaxBlockTime = pdMS_TO_TICKS(500); /* ÉèÖÃ×î´óµÈ´ıÊ±¼äÎª200ms */
 
 	  while(1)
 	  {
@@ -411,11 +436,30 @@ static void vTaskR_axis(void *pvParameters)
 		if(xResult == pdPASS)
 		{
 		  /* ³É¹¦½ÓÊÕ£¬²¢Í¨¹ı´®¿Ú½«Êı¾İ´òÓ¡³öÀ´ */
-			printf("R_axis:ptMsg->ucMessageID = %d\r\n", ptMsg->ucMessageID);
-            printf("R_axis:ptMsg->ulData[0] = %d\r\n", ptMsg->ulData[0]);
-            printf("R_axis:ptMsg->usData[0] = %d\r\n", ptMsg->usData[0]);
-			STEPMOTOR_AxisMoveRel(AXIS_R,30*SPR*CW,step_accel,step_decel,set_speed);  // RÖáÕıÏòÒÆ¶¯30È¦
+			printf("R_axis:ptMsg->ucMessageID = %#x\r\n", ptMsg->ucMessageID);
+            R_axis=1;
+			  printf("Y_axis:ptMsg->usData[0] = %#x\r\n", ptMsg->usData[0]);
+			  printf("Y_axis:tMsg->usData[1] = %#x\r\n", ptMsg->usData[1]);
+			  printf("Y_axis:ptMsg->usData[2] = %#x\r\n", ptMsg->usData[2]);
+			  printf("Y_axis:tMsg->usData[3] = %#x\r\n", ptMsg->usData[3]);
+			  printf("Y_axis:ptMsg->usData[4] = %#x\r\n", ptMsg->usData[4]);
+			  printf("Y_axis:tMsg->usData[5] = %#x\r\n", ptMsg->usData[5]);
+			
 	
+		}
+		if(R_axis==1)
+		{
+		   R_axis=0;
+		   printf("aRxBuffer[0]=%#x \n",aRxBuffer[0]);
+		   printf("aRxBuffer[1]=%#x \n",aRxBuffer[1]);
+		   printf("aRxBuffer[2]=%#x \n",aRxBuffer[2]);
+		   printf("aRxBuffer[0]=%#x \n",aRxBuffer[3]);
+		   printf("aRxBuffer[1]=%#x \n",aRxBuffer[4]);
+		   printf("aRxBuffer[2]=%#x \n",aRxBuffer[5]);
+		   printf("aRxBuffer[2]=%#x \n",aRxBuffer[6]);
+		   printf("aRxBuffer[7]=%#x \n",aRxBuffer[7]);
+			STEPMOTOR_AxisMoveRel(AXIS_R,30*SPR*CW,step_accel,step_decel,set_speed);  // RÖáÕıÏòÒÆ¶¯30È¦
+		
 		}
 		else
 		{
@@ -441,14 +485,14 @@ static void AppTaskCreate (void)
                  "vTaskUserIF",     	/* ÈÎÎñÃû    */
                  1024,               	/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,              	/* ÈÎÎñ²ÎÊı  */
-                 5,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
+                 1,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskUserIF );  /* ÈÎÎñ¾ä±ú  */
 	
     xTaskCreate( vTaskX_axis,   	      /* ÈÎÎñº¯Êı  */
                  "vTaskX_axis",     	  /* ÈÎÎñÃû    */
                  1024,               	/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,              	/* ÈÎÎñ²ÎÊı  */
-                 4,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
+                 2,                 	/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskX_axis );  /* ÈÎÎñ¾ä±ú  */
 	
 	
@@ -463,14 +507,14 @@ static void AppTaskCreate (void)
                  "vTaskZ_axis",   		  /* ÈÎÎñÃû    */
                  1024,             		/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,           		  /* ÈÎÎñ²ÎÊı  */
-                 2,               		/* ÈÎÎñÓÅÏÈ¼¶*/
+                 4,               		/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskZ_axis );  /* ÈÎÎñ¾ä±ú  */
 	
 	xTaskCreate( vTaskR_axis,     		    /* ÈÎÎñº¯Êı  */
                  "vTaskR_axis",   		  /* ÈÎÎñÃû    */
                  1024,             		/* ÈÎÎñÕ»´óĞ¡£¬µ¥Î»word£¬Ò²¾ÍÊÇ4×Ö½Ú */
                  NULL,           		  /* ÈÎÎñ²ÎÊı  */
-                 1,               		/* ÈÎÎñÓÅÏÈ¼¶*/
+                 5,               		/* ÈÎÎñÓÅÏÈ¼¶*/
                  &xHandleTaskR_axis );  /* ÈÎÎñ¾ä±ú  */
 	
 }
