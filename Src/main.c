@@ -201,7 +201,8 @@ static void vTaskTaskUserIF(void *pvParameters)
 		}  
 	   if(aRxBuffer[0]==0xa2)
 	   {
-		  MSG_T   *ptMsg=NULL;
+		   aRxBuffer[0]=0;
+		   MSG_T   *ptMsg=NULL;
           BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       
          /* 初始化结构体指针 */
@@ -228,7 +229,8 @@ static void vTaskTaskUserIF(void *pvParameters)
       
       if(aRxBuffer[0]==0xa3)//if(Key_AccessTimes(&key3,KEY_ACCESS_READ)!=0)//按键被按下过
       {         
-          MSG_T   *ptMsg=NULL;
+           aRxBuffer[0]=0;
+		  MSG_T   *ptMsg=NULL;
           BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       
          /* 初始化结构体指针 */
@@ -249,7 +251,8 @@ static void vTaskTaskUserIF(void *pvParameters)
 	   }
        if(aRxBuffer[0]==0xa4)
 	   {		   
-		  MSG_T   *ptMsg=NULL;
+		   aRxBuffer[0]=0;
+		   MSG_T   *ptMsg=NULL;
           BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       
          /* 初始化结构体指针 */
@@ -257,7 +260,7 @@ static void vTaskTaskUserIF(void *pvParameters)
           
 		  /* 初始化数组 */
 		   
-		 
+		  
 		  #if 0
 		  //ptMsg->ucMessageID=aRxBuffer[0];
 		//  ptMsg->ulData[0]=aRxBuffer[];
