@@ -392,7 +392,7 @@ static void vTaskX_axis(void *pvParameters)
             printf_avltree(Xtree,Xtree->element,0);
 			xh=getHeight(Xtree)+1;
 			printf("\n树的高度xh=%d\n",xh);
-			printf("\先序遍历: ");
+			printf("\n先序遍历: ");
 			preOrder(Xtree);
 			printf("\n中序遍历: ");
 			inOrder(Xtree);

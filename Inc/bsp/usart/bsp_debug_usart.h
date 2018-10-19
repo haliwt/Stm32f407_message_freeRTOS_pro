@@ -13,9 +13,9 @@
 #define DEBUG_USART_RCC_CLK_DISABLE()                __HAL_RCC_USART2_CLK_DISABLE()
 
 #define DEBUG_USARTx_GPIO_ClK_ENABLE()               __HAL_RCC_GPIOD_CLK_ENABLE()
-#define DEBUG_USARTx_Tx_GPIO_PIN                     GPIO_PIN_5 //WT.EDIT
+#define DEBUG_USARTx_Tx_GPIO_PIN                     GPIO_PIN_5 //WT.EDIT  TXD =PD5
 #define DEBUG_USARTx_Tx_GPIO                         GPIOD
-#define DEBUG_USARTx_Rx_GPIO_PIN                     GPIO_PIN_6
+#define DEBUG_USARTx_Rx_GPIO_PIN                     GPIO_PIN_6 //WT.EDIT RXD=PD6
 #define DEBUG_USARTx_Rx_GPIO                         GPIOD
 
 #define DEBUG_USARTx_AFx                             GPIO_AF7_USART2
