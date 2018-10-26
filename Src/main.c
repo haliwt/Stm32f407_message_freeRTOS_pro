@@ -1,12 +1,11 @@
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 #include "led/bsp_led.h"
-//#include "R_axis/r_axis.h" 
 #include "usart/bsp_debug_usart.h"
 #include "key/bsp_key.h"
-//#include "Z_axis/z_axis.h"
 #include "StepMotor/bsp_StepMotor.h"
 #include "avltree/avltree.h"
+#include "HMI_usart/hmi_usart.h"
 
 /* 私有类型定义 --------------------------------------------------------------*/
 /* 私有宏定义 ----------------------------------------------------------------*/
@@ -126,13 +125,13 @@ int main(void)
   SystemClock_Config();
   
   MX_DEBUG_USART_Init();
-
+  MX_USARTx_Init();
    /* 初始化LED */
   LED_GPIO_Init();
   /* 板子按键初始化 */
   KEY_GPIO_Init();
   /* 基本定时器初始化：100us中断一次 */
-	
+     
 	 STEPMOTOR_TIMx_Init();
 	/* 创建任务 */
 	AppTaskCreate();
@@ -186,7 +185,7 @@ static void vTaskTaskUserIF(void *pvParameters)
       Key_RefreshState(&key3);//刷新按键状态
 	 
 	
-      HAL_UART_Receive(&husart_debug,aRxBuffer,9,0xffff);
+      HAL_UART_Receive(&husartx,aRxBuffer,7,0xffff);//HAL_UART_Receive(&husart_debug,aRxBuffer,7,0xffff);
 	#if 0
 	   printf("aRxBuffer[0]=%#x \n",aRxBuffer[0]);
 	   printf("aRxBuffer[1]=%#x \n",aRxBuffer[1]);
@@ -397,7 +396,7 @@ static void vTaskX_axis(void *pvParameters)
 			printf("\n中序遍历: ");
 			inOrder(Xtree);
 			
-			STEPMOTOR_AxisMoveRel(AXIS_Y,30*SPR*CCW,step_accel,step_decel,set_speed); // X轴反向移动30圈
+			STEPMOTOR_AxisMoveRel(AXIS_X,30*SPR*CCW,step_accel,step_decel,set_speed); // X轴反向移动30圈
 		}
 		else
 		{
