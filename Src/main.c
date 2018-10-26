@@ -15,10 +15,12 @@ static TaskHandle_t xHandleTaskX_axis = NULL;
 static TaskHandle_t xHandleTaskY_axis = NULL;
 static TaskHandle_t xHandleTaskZ_axis = NULL;
 static TaskHandle_t xHandleTaskR_axis = NULL;
+static TaskHandle_t xHandleTaskI_data = NULL;  //接收数据任务
 static QueueHandle_t xQueue1 = NULL;
 static QueueHandle_t xQueue2 = NULL;
 static QueueHandle_t xQueue3 = NULL; //WT.EDIT
 static QueueHandle_t xQueue4 = NULL; //WT.EDIT
+static QueueHandle_t xQueue5 = NULL; //WT.EDIT
 
 KEY key1,key2,key3,key4,key5;
 extern int X_axis;
@@ -59,6 +61,7 @@ static void vTaskX_axis(void *pvParameters);
 static void vTaskY_axis(void *pvParameters);
 static void vTaskZ_axis(void *pvParameters);
 static void vTaskR_axis(void *pvParameters);  //WT.EDIT 
+static void vTaskI_data(void *pvParameters);  //从HMI接收数据，函数
 static void AppTaskCreate (void);
 static void AppObjCreate (void);
 
@@ -156,7 +159,7 @@ int main(void)
 *********************************************************************/
 static void vTaskTaskUserIF(void *pvParameters)
 {
-      uint8_t i;
+      uint8_t i,g_uiOrder;
 	 
 	  uint8_t xlength,ylength;
 	 
@@ -344,7 +347,24 @@ static void vTaskTaskUserIF(void *pvParameters)
 
       		
         Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
-      } 
+      }
+     /*输入数据命令*/
+	if(aRxBuffer[0]==0xa5)
+	{
+	    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      
+         g_uiOrder=aRxBuffer[1];
+      
+		  /* 向消息队列发数据 */
+         xQueueSendFromISR(xQueue5,
+                  (void *)&g_uiOrder,
+                  &xHigherPriorityTaskWoken);
+
+         /* 如果xHigherPriorityTaskWoken = pdTRUE，那么退出中断后切到当前最高优先级任务执行 */
+         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        //HAL_TIM_OC_Start_IT(&htim2,TIM_CHANNEL_2);
+        Key_AccessTimes(&key3,KEY_ACCESS_WRITE_CLEAR);
+	}	  
      vTaskDelay(20);
   }
 		
@@ -544,6 +564,38 @@ static void vTaskR_axis(void *pvParameters)
 	  
    }
 }
+/**************************************************
+  *
+  * 函数功能: I_axis任务,从HMI屏接收输入的数据
+  * 输入参数: 无
+  * 返 回 值: 无
+  * 说    明: 无
+  *
+***************************************************/
+static void vTaskI_data(void *pvParameters)
+{
+   BaseType_t xResult;
+  const TickType_t xMaxBlockTime = pdMS_TO_TICKS(300); /* 设置最大等待时间为300ms */
+  uint8_t ucQueueMsgValue;
+
+  while(1)
+  {
+   xResult = xQueueReceive(xQueue5,                   /* 消息队列句柄 */
+                          (void *)&ucQueueMsgValue,  /* 存储接收到的数据到变量ucQueueMsgValue中 */
+                          (TickType_t)xMaxBlockTime);/* 设置阻塞时间 */
+  
+    if(xResult == pdPASS)
+    {
+      /* 成功接收，并通过串口将数据打印出来 */
+      printf("ucQueueMsgValue = %#x\r\n", ucQueueMsgValue);
+    }
+    else
+    {
+      LED2_TOGGLE;
+    }
+  }
+	
+}
 
 /***************************************************
   *
@@ -591,6 +643,13 @@ static void AppTaskCreate (void)
                  NULL,           		  /* 任务参数  */
                  5,               		/* 任务优先级*/
                  &xHandleTaskR_axis );  /* 任务句柄  */
+				 
+	xTaskCreate( vTaskI_data,     		    /* 任务函数  */
+                 "vTaskI_data",   		  /* 任务名    */
+                 512,             		/* 任务栈大小，单位word，也就是4字节 */
+                 NULL,           		  /* 任务参数  */
+                 6,               		/* 任务优先级*/
+                 &xHandleTaskI_data );  /* 任务句柄  */
 	
 }
 
@@ -630,6 +689,13 @@ static void AppObjCreate (void)
     {
         printf("xQueue4 don't set up ERROR !\n");
     }
+	/*接收X , Y ,Z ,R 轴的数据*/
+	xQueue5 = xQueueCreate(7, sizeof(uint8_t));
+    if( xQueue5 == 0 )
+    {
+        printf("xQueue5 don't set up ERROR !\n");/* 没有创建成功，用户可以在这里加入创建失败的处理机制 */
+    }
+    
 }
 
 

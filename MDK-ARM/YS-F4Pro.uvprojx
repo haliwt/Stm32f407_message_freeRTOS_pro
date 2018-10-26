@@ -1025,11 +1025,6 @@
               <FilePath>..\Src\bsp\led\bsp_led.c</FilePath>
             </File>
             <File>
-              <FileName>bsp_BasicTIM.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\bsp\BasicTIM\bsp_BasicTIM.c</FilePath>
-            </File>
-            <File>
               <FileName>bsp_key.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\bsp\key\bsp_key.c</FilePath>
@@ -1040,9 +1035,24 @@
               <FilePath>..\Src\bsp\usart\bsp_debug_usart.c</FilePath>
             </File>
             <File>
-              <FileName>bsp_GeneralTIM.c</FileName>
+              <FileName>bsp_spiflash.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\bsp\GeneralTIM\bsp_GeneralTIM.c</FilePath>
+              <FilePath>..\Src\bsp\spiflash\bsp_spiflash.c</FilePath>
+            </File>
+            <File>
+              <FileName>avl_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\bsp\avl_queue\avl_queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>avltree.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\bsp\Avltree\avltree.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_STEPMOTOR.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\bsp\StepMotor\bsp_STEPMOTOR.c</FilePath>
             </File>
           </Files>
         </Group>
