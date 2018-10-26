@@ -6,6 +6,7 @@
 #include "StepMotor/bsp_StepMotor.h"
 #include "avltree/avltree.h"
 #include "HMI_usart/hmi_usart.h"
+#include "spiflash/bsp_spiflash.h"
 
 /* 私有类型定义 --------------------------------------------------------------*/
 /* 私有宏定义 ----------------------------------------------------------------*/
@@ -134,7 +135,7 @@ int main(void)
   /* 板子按键初始化 */
   KEY_GPIO_Init();
   /* 基本定时器初始化：100us中断一次 */
-     
+   MX_SPIFlash_Init();  
 	 STEPMOTOR_TIMx_Init();
 	/* 创建任务 */
 	AppTaskCreate();
@@ -436,7 +437,7 @@ static void vTaskX_axis(void *pvParameters)
 static void vTaskY_axis(void *pvParameters)
 {
    
-	 MSG_T *ptMsg;
+	MSG_T *ptMsg;
 	BaseType_t xResult;
 	
 	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 设置最大等待时间为200ms */
@@ -572,9 +573,19 @@ static void vTaskR_axis(void *pvParameters)
   * 说    明: 无
   *
 ***************************************************/
+static uint8_t g_uiCount = 0; /* 设置为全局静态变量，方便数据更新 */
 static void vTaskI_data(void *pvParameters)
 {
-   BaseType_t xResult;
+  uint8_t i;
+  float x,y,z,r;
+  long double Tx_Buffer[10]= {0};
+  long double Rx_Buffer[10]= {0};
+  uint8_t cal_flag = 0;
+  uint8_t cal_f = 0;
+
+  uint32_t DeviceID = 0;
+  uint32_t FlashID = 0;
+  BaseType_t xResult;
   const TickType_t xMaxBlockTime = pdMS_TO_TICKS(300); /* 设置最大等待时间为300ms */
   uint8_t ucQueueMsgValue;
 
@@ -588,6 +599,58 @@ static void vTaskI_data(void *pvParameters)
     {
       /* 成功接收，并通过串口将数据打印出来 */
       printf("ucQueueMsgValue = %#x\r\n", ucQueueMsgValue);
+	  if(g_uiCount == 0)
+	  {
+			g_uiCount++;
+		  
+		   DeviceID = SPI_FLASH_ReadDeviceID();
+  
+           HAL_Delay(100);
+		  
+			FlashID = SPI_FLASH_ReadID();
+	  
+			printf("FlashID is 0x%X,  Manufacturer Device ID is 0x%X\n", FlashID, DeviceID);
+		
+		   /* Check the SPI Flash ID */
+		   if (FlashID == SPI_FLASH_ID)  /* #define  sFLASH_ID  0XEF4018 */
+		   {	
+				printf("检测到华邦串行flash W25Q128 !\n");
+				
+				SPI_FLASH_BufferRead(&cal_flag, 0, 1); //读取 地址0x00，的值
+				if( cal_flag == 0x55)
+				{      
+					SPI_FLASH_BufferRead((void*)Rx_Buffer, 1, sizeof(Rx_Buffer));
+					for(i=0;i<8;i++ )
+					printf("rx_read = %LF \n",Rx_Buffer[i]);
+				}    
+				else
+				{
+					cal_flag = 0x55;
+					SPI_FLASH_SectorErase(0);
+					SPI_FLASH_BufferWrite(&cal_flag, 0, 8); 
+			  
+					for( i=0; i<8; i++ )
+						Tx_Buffer[i] = i +0.125;
+			  
+					SPI_FLASH_BufferWrite((void*)Tx_Buffer, 1, sizeof(Tx_Buffer)); //0-1
+			  
+					for(i=0; i<8;i++ )
+					printf("tx = %LF \n",Tx_Buffer[i]);
+				} 
+		  }
+		  else
+		  {    
+			printf("获取不到 W25Q128 ID!\n");
+		  }
+	  }
+	  printf("请输入X,Y,Z,R轴坐标值\n");
+	  scanf("%f%f%f%f",&x,&y,&z,&r);
+	  //printf("x= %f,y=%f,z=%f,r=%f\n",x,y,z,r);
+	  //ptMsg->uIData[0]=x;
+	  //ptMsg->uIData[1]=y;
+	  //ptMsg->uIData[2]=z;
+	  //ptMsg->uIData[3]=r;
+	  printf("x= %f,y=%f,z=%f,r=%f\n",x,y,z,r);	
     }
     else
     {
@@ -646,7 +709,7 @@ static void AppTaskCreate (void)
 				 
 	xTaskCreate( vTaskI_data,     		    /* 任务函数  */
                  "vTaskI_data",   		  /* 任务名    */
-                 512,             		/* 任务栈大小，单位word，也就是4字节 */
+                 1024,             		/* 任务栈大小，单位word，也就是4字节 */
                  NULL,           		  /* 任务参数  */
                  6,               		/* 任务优先级*/
                  &xHandleTaskI_data );  /* 任务句柄  */
