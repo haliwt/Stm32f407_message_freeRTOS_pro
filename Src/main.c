@@ -7,7 +7,9 @@
 #include "avltree/avltree.h"
 #include "HMI_usart/hmi_usart.h"
 #include "spiflash/bsp_spiflash.h"
+#include "stdio.h"
 
+#define ByteSize  500
 /* 私有类型定义 --------------------------------------------------------------*/
 /* 私有宏定义 ----------------------------------------------------------------*/
 /* 私有变量 ------------------------------------------------------------------*/
@@ -33,6 +35,9 @@ AVLtree *Xtree = NULL;
 AVLtree *Ytree = NULL;
 AVLtree *Ztree = NULL;
 AVLtree *Rtree = NULL;
+
+long double Tx_Buffer[ByteSize]= {0};
+//long double Rx_Buffer[ByteSize]= {0};
 	
 uint8_t aRxBuffer[9];
 // 速度最大值由驱动器和电机决定，有些最大是1800，有些可以达到4000
@@ -573,15 +578,17 @@ static void vTaskR_axis(void *pvParameters)
   * 说    明: 无
   *
 ***************************************************/
-static uint8_t g_uiCount = 0; /* 设置为全局静态变量，方便数据更新 */
+static uint16_t g_uiCount = 0; /* 设置为全局静态变量，方便数据更新 */
+static uint16_t g_uiAdd=0;
+static uint8_t g_uiPower = 0; /* 设置为全局静态变量，方便数据更新 */
 static void vTaskI_data(void *pvParameters)
 {
-  uint8_t i;
+ // uint16_t i;
   float x,y,z,r;
-  long double Tx_Buffer[10]= {0};
-  long double Rx_Buffer[10]= {0};
+  //long double Tx_Buffer[4]= {0};
+  //long double Rx_Buffer[4]= {0};
   uint8_t cal_flag = 0;
-  uint8_t cal_f = 0;
+ 
 
   uint32_t DeviceID = 0;
   uint32_t FlashID = 0;
@@ -599,29 +606,25 @@ static void vTaskI_data(void *pvParameters)
     {
       /* 成功接收，并通过串口将数据打印出来 */
       printf("ucQueueMsgValue = %#x\r\n", ucQueueMsgValue);
-	  if(g_uiCount == 0)
+	  if(g_uiPower == 0)
 	  {
-			g_uiCount++;
-		  
+		   g_uiPower++;
+		   SPI_FLASH_BulkErase();
 		   DeviceID = SPI_FLASH_ReadDeviceID();
-  
            HAL_Delay(100);
-		  
-			FlashID = SPI_FLASH_ReadID();
-	  
-			printf("FlashID is 0x%X,  Manufacturer Device ID is 0x%X\n", FlashID, DeviceID);
-		
+		   FlashID = SPI_FLASH_ReadID();
+	       printf("FlashID is 0x%X,  Manufacturer Device ID is 0x%X\n", FlashID, DeviceID);
 		   /* Check the SPI Flash ID */
 		   if (FlashID == SPI_FLASH_ID)  /* #define  sFLASH_ID  0XEF4018 */
 		   {	
 				printf("检测到华邦串行flash W25Q128 !\n");
-				
+				#if 0
 				SPI_FLASH_BufferRead(&cal_flag, 0, 1); //读取 地址0x00，的值
 				if( cal_flag == 0x55)
 				{      
-					SPI_FLASH_BufferRead((void*)Rx_Buffer, 1, sizeof(Rx_Buffer));
-					for(i=0;i<8;i++ )
-					printf("rx_read = %LF \n",Rx_Buffer[i]);
+					SPI_FLASH_BufferRead((void*)Tx_Buffer, 1, sizeof(Tx_Buffer));
+					for(i=0;i<ByteSize;i++ )
+					printf("rx_read = %LF \n",Tx_Buffer[i]);
 				}    
 				else
 				{
@@ -629,36 +632,59 @@ static void vTaskI_data(void *pvParameters)
 					SPI_FLASH_SectorErase(0);
 					SPI_FLASH_BufferWrite(&cal_flag, 0, 8); 
 			  
-					for( i=0; i<8; i++ )
-						Tx_Buffer[i] = i +0.125;
-			  
-					SPI_FLASH_BufferWrite((void*)Tx_Buffer, 1, sizeof(Tx_Buffer)); //0-1
-			  
-					for(i=0; i<8;i++ )
+					for( i=0; i<ByteSize; i++ )
+					  {
+						  Tx_Buffer[i] = i +0.125;
+						  SPI_FLASH_BufferWrite((void*)Tx_Buffer, i, sizeof(Tx_Buffer)); //0-1
+					  }
+					for(i=0; i<ByteSize;i++ )
 					printf("tx = %LF \n",Tx_Buffer[i]);
 				} 
+				#endif 
 		  }
 		  else
 		  {    
 			printf("获取不到 W25Q128 ID!\n");
 		  }
-	  }
+	   }
 	  printf("请输入X,Y,Z,R轴坐标值\n");
-	  scanf("%f%f%f%f",&x,&y,&z,&r);
-	  //printf("x= %f,y=%f,z=%f,r=%f\n",x,y,z,r);
-	  //ptMsg->uIData[0]=x;
-	  //ptMsg->uIData[1]=y;
-	  //ptMsg->uIData[2]=z;
-	  //ptMsg->uIData[3]=r;
-	  printf("x= %f,y=%f,z=%f,r=%f\n",x,y,z,r);	
-    }
-    else
+	  scanf("%f%f%f%f ",&x,&y,&z,&r);
+	  printf("x=%f y=%f z=%f r=%f \n",x,y,z,r);
+	 // g_uiCount++;
+	 // g_uiAdd++;
+	  {
+	       Tx_Buffer[0] = x;
+		   SPI_FLASH_BufferWrite((void*)Tx_Buffer, g_uiCount, sizeof(Tx_Buffer)); //0-1
+	    
+		  #if 1
+		   Tx_Buffer[1] = y;
+		   SPI_FLASH_BufferWrite((void*)Tx_Buffer, g_uiCount++, sizeof(Tx_Buffer)); //0-1
+		   Tx_Buffer[2] = z;
+		   SPI_FLASH_BufferWrite((void*)Tx_Buffer, g_uiCount++, sizeof(Tx_Buffer)); //0-1
+		   Tx_Buffer[3] = r;
+		   SPI_FLASH_BufferWrite((void*)Tx_Buffer, g_uiCount++, sizeof(Tx_Buffer)); //0-1
+		  
+		  // SPI_FLASH_BufferRead((void*)Tx_Buffer, g_uiCount-4, sizeof(Tx_Buffer));
+	      // for(i=0;i< (g_uiCount+1);i++ )
+		  {
+			printf("TX0 = %LF \n",Tx_Buffer[0]);
+			printf("TX1 = %LF \n",Tx_Buffer[1]);
+			printf("TX2 = %LF \n",Tx_Buffer[2]);
+			printf("TX3 = %LF \n",Tx_Buffer[3]);
+			printf("TXguicount+1 = %LF \n",Tx_Buffer[4]);
+		  }
+		  #endif
+		  
+	  }
+     }
+	 
+	 else
     {
       LED2_TOGGLE;
     }
-  }
-	
-}
+ }
+}	
+
 
 /***************************************************
   *
@@ -682,7 +708,7 @@ static void AppTaskCreate (void)
                  "vTaskX_axis",     	  /* 任务名    */
                  1024,               	/* 任务栈大小，单位word，也就是4字节 */
                  NULL,              	/* 任务参数  */
-                 2,                 	/* 任务优先级*/
+                 3,                 	/* 任务优先级*/
                  &xHandleTaskX_axis );  /* 任务句柄  */
 	
 	
@@ -690,28 +716,28 @@ static void AppTaskCreate (void)
                  "vTaskY_axis",  		    /* 任务名    */
                  1024,         		    /* 任务栈大小，单位word，也就是4字节 */
                  NULL,        		    /* 任务参数  */
-                 3,           		    /* 任务优先级*/
+                 4,           		    /* 任务优先级*/
                  &xHandleTaskY_axis);  /* 任务句柄  */
 	
 	xTaskCreate( vTaskZ_axis,     		    /* 任务函数  */
                  "vTaskZ_axis",   		  /* 任务名    */
                  1024,             		/* 任务栈大小，单位word，也就是4字节 */
                  NULL,           		  /* 任务参数  */
-                 4,               		/* 任务优先级*/
+                 5,               		/* 任务优先级*/
                  &xHandleTaskZ_axis );  /* 任务句柄  */
 	
 	xTaskCreate( vTaskR_axis,     		    /* 任务函数  */
                  "vTaskR_axis",   		  /* 任务名    */
                  1024,             		/* 任务栈大小，单位word，也就是4字节 */
                  NULL,           		  /* 任务参数  */
-                 5,               		/* 任务优先级*/
+                 6,               		/* 任务优先级*/
                  &xHandleTaskR_axis );  /* 任务句柄  */
 				 
 	xTaskCreate( vTaskI_data,     		    /* 任务函数  */
                  "vTaskI_data",   		  /* 任务名    */
-                 1024,             		/* 任务栈大小，单位word，也就是4字节 */
+                 2048,             		/* 任务栈大小，单位word，也就是4字节 */
                  NULL,           		  /* 任务参数  */
-                 6,               		/* 任务优先级*/
+                 2,               		/* 任务优先级*/
                  &xHandleTaskI_data );  /* 任务句柄  */
 	
 }
